@@ -6,4 +6,8 @@ import basicSsl from '@vitejs/plugin-basic-ssl';
 // preview tooling that can't handle the self-signed cert.
 export default defineConfig({
   plugins: process.env.NO_HTTPS ? [] : [basicSsl()],
+  server: {
+    // Honor PORT when preview tooling assigns one; default stays 5173.
+    port: Number(process.env.PORT) || 5173,
+  },
 });

@@ -9,12 +9,14 @@ fine — that's the contract. If it starts to feel like grinding, stop and ask w
 **Playable state:** open the game on the iPhone over local HTTPS, grant motion
 permission, and watch a gravity arrow track the phone's tilt in a lit, empty tank.
 
-- [ ] Tank shell rendered (visible glass edges — the player must see what water bounces off)
-- [ ] Fixed-timestep loop (60 Hz physics, accumulator)
-- [ ] DeviceMotion permission flow (user-tap gated, iOS quirks handled)
-- [ ] Gravity arrow visualizer driven by real device tilt
-- [ ] Debug panel (Tweakpane) + always-on FPS counter
-- [ ] Desktop fallback: fixed gravity, panel works with mouse
+- [x] Tank shell rendered (visible glass edges — the player must see what water bounces off)
+- [x] Fixed-timestep loop (60 Hz physics, accumulator)
+- [x] DeviceMotion permission flow (user-tap gated, iOS quirks handled)
+- [x] Gravity arrow visualizer driven by real device tilt (portrait-verified on iPhone, flip-sign defaults ON per field test)
+- [x] Debug panel (Tweakpane) + always-on FPS counter
+- [x] Desktop fallback: fixed gravity, panel works with mouse
+- [ ] Landscape guard: portrait shows blocking rotate-prompt overlay (touch devices only); Android lock() attempted
+- [ ] Axis remap via `screen.orientation.angle` — **verify on iPad in all four orientations** (arrow must track the real floor)
 
 ## M1 — Life 鱼群
 **Playable state:** a school of fish lives in the tank. You can't touch them

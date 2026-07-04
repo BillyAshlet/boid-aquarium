@@ -28,6 +28,21 @@
         pointer-events: none;
         white-space: pre;
       }
+      #rotate-prompt {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        background: rgba(7, 30, 61, 0.96);
+        color: #cfe3f7;
+        font: 16px/2 "Space Mono", ui-monospace, monospace;
+      }
+      #rotate-prompt[hidden] {
+        display: none;
+      }
       #enable-tilt {
         position: fixed;
         left: 50%;
@@ -46,6 +61,9 @@
   <body>
     <div id="status">…</div>
     <button id="enable-tilt" hidden>enable tilt 🌀</button>
+    <div id="rotate-prompt" hidden>
+      <div>please rotate your phone<br />请横屏游玩 🔄</div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Pane } from 'tweakpane';
 import { GRAVITY } from './world.js';
+import { screenAngle, isPortrait } from './input.js';
 
 // The window into the machine: Tweakpane panel, always-on FPS counter,
 // and visualizers. Every invisible force in this game eventually gets a
@@ -20,14 +21,24 @@ export function createDebug({ world, scene, input }) {
   );
   scene.add(arrow);
 
-  const monitors = { gravity: '' };
+  const monitors = { gravity: '', screen: '' };
 
   const inputFolder = pane.addFolder({ title: 'input 感应' });
   inputFolder.addBinding(input, 'flipSign', { label: 'flip sign' });
-  inputFolder.addBinding(input, 'smoothing', { min: 0.01, max: 1 });
+  // Sweet spot lives in the low range — field-tested: 0.1 sluggish,
+  // 0.2 jittery, so the whole slider is that neighborhood.
+  inputFolder.addBinding(input, 'smoothing', {
+    min: 0.01,
+    max: 0.3,
+    step: 0.005,
+  });
   inputFolder.addBinding(monitors, 'gravity', {
     readonly: true,
     label: 'gravity',
+  });
+  inputFolder.addBinding(monitors, 'screen', {
+    readonly: true,
+    label: 'screen',
   });
 
   const view = { gravityArrow: true };
@@ -47,6 +58,7 @@ export function createDebug({ world, scene, input }) {
     if (g.lengthSq() > 1e-6) arrow.setDirection(g.clone().normalize());
     arrow.setLength(0.35 * (g.length() / GRAVITY), 0.06, 0.03);
     monitors.gravity = `x ${g.x.toFixed(2)}  y ${g.y.toFixed(2)}  z ${g.z.toFixed(2)}`;
+    monitors.screen = `${screenAngle()}°  ${isPortrait() ? 'portrait' : 'landscape'}`;
 
     frames++;
     if (nowMs - windowStart > 500) {

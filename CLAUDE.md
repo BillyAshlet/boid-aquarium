@@ -27,6 +27,12 @@ This file is the engineering source of truth; if they conflict, this file wins.
 - **Vanilla JS + Three.js. No framework. Vite is a dev server only.**
 - **Desktop = simplified fallback** (fixed gravity, mouse/keys). Mobile is
   the real game and the performance budget.
+- **Landscape-only game** (two horizontal posts). Physics and rendering
+  assume landscape; portrait on touch devices shows a blocking "rotate
+  your phone" overlay. Android additionally attempts a real
+  `screen.orientation.lock()`. Device gravity is remapped through
+  `screen.orientation.angle` into screen-relative axes so world-down
+  stays visually consistent in every physical orientation.
 
 ## Conventions 约定
 
@@ -76,6 +82,12 @@ This file is the engineering source of truth; if they conflict, this file wins.
   + smoothing, `active` = data actually arriving), debug.js (Tweakpane,
   gravity arrow, always-on FPS). `npm run dev` = HTTPS for phone,
   `npm run dev:http` = plain HTTP for preview tooling.
-- **Next up:** Billy's phone test of M0 (arrow must track the real
-  floor in all orientations — use flip-sign toggle if it points at the
-  ceiling). Then M1: boids. See MILESTONES.md.
+- **2026-07-04 — Done:** M0 phone-feedback round. Landscape-only guard
+  (rotate-prompt overlay + Android lock attempt), gravity remap through
+  `screen.orientation.angle` into screen axes, flip-sign defaults ON
+  (field-tested on iPhone), smoothing range narrowed to 0.01–0.3
+  (0.1 sluggish / 0.2 jittery per Billy). Zero-baseline decision:
+  **physical zero (option A)** — real gravity is the reference, no
+  session recalibration; revisit only if playtests demand a comfort offset.
+- **Next up:** Billy verifies axis remap on iPad (all four orientations,
+  arrow tracks real floor). Then M1: boids. See MILESTONES.md.
