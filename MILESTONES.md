@@ -15,8 +15,8 @@ permission, and watch a gravity arrow track the phone's tilt in a lit, empty tan
 - [x] Gravity arrow visualizer driven by real device tilt (portrait-verified on iPhone, flip-sign defaults ON per field test)
 - [x] Debug panel (Tweakpane) + always-on FPS counter
 - [x] Desktop fallback: fixed gravity, panel works with mouse
-- [ ] Landscape guard: portrait shows blocking rotate-prompt overlay (touch devices only); Android lock() attempted
-- [ ] Axis remap via `screen.orientation.angle` — **verify on iPad in all four orientations** (arrow must track the real floor)
+- [x] Canonical landscape frame: gravity remap anchored to the device frame (API-free); presentation rotation (CSS 90° + dimension swap) for portrait viewports; frame stepper on panel; rotate overlay deleted
+- [ ] **Device verify:** iPad rotation-locked — turn it in your hands, arrow never leaves the real floor. iPhone — canonical hold reads correctly; with auto-rotate on, check the `auto` frame guess in both landscapes (stepper reveals the right value if it guesses wrong)
 
 ## M1 — Life 鱼群
 **Playable state:** a school of fish lives in the tank. You can't touch them

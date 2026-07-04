@@ -1,10 +1,16 @@
 import * as THREE from 'three';
 import { TANK } from './world.js';
 
-export function createScene(container) {
+// Presentation: canonical landscape → viewport. The only orientation
+// signal we trust is the viewport's own aspect — it cannot lie, it IS
+// the box we draw into. Touch device + portrait viewport → rotate the
+// whole #app wrapper 90° CW and swap dimensions, so the landscape game
+// fills the screen (no letterbox) and reads correctly in the canonical
+// hold (device top edge left). Desktop never rotates.
+export function createScene(wrapper) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  container.appendChild(renderer.domElement);
+  wrapper.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#071e3d');
@@ -35,13 +41,33 @@ export function createScene(container) {
   );
   scene.add(panes, edges);
 
-  // Fixed camera: pull straight back until the tank (plus margin) fits
-  // both screen axes, portrait or landscape.
+  let rotated = false;
+
   function resize() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const isTouch = navigator.maxTouchPoints > 0;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    rotated = isTouch && vh > vw;
+    const w = rotated ? vh : vw;
+    const h = rotated ? vw : vh;
+
+    if (rotated) {
+      // A w×h wrapper rotated 90° CW about its top-left, after being
+      // shifted up by its own height, lands exactly on the vh×vw
+      // viewport — fullscreen, dimension-swapped.
+      wrapper.style.width = `${w}px`;
+      wrapper.style.height = `${h}px`;
+      wrapper.style.transform = 'rotate(90deg) translateY(-100%)';
+    } else {
+      wrapper.style.width = '100%';
+      wrapper.style.height = '100%';
+      wrapper.style.transform = 'none';
+    }
+
     renderer.setSize(w, h);
     camera.aspect = w / h;
+    // Fixed camera: pull straight back until the tank (plus margin)
+    // fits both canonical axes.
     const margin = 1.25;
     const halfFov = THREE.MathUtils.degToRad(camera.fov) / 2;
     const distForHeight = ((TANK.height / 2) * margin) / Math.tan(halfFov);
@@ -54,8 +80,32 @@ export function createScene(container) {
     );
     camera.updateProjectionMatrix();
   }
-  window.addEventListener('resize', resize);
+
+  // iOS reports stale innerWidth/Height mid-rotation; re-measure after
+  // things settle.
+  let settleTimer = 0;
+  function onResize() {
+    resize();
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(resize, 300);
+  }
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
   resize();
 
-  return { renderer, scene, camera };
+  // CSS transforms rotate pixels, not coordinates: touch positions
+  // arrive in viewport space. ALL canvas-space touch math (M3 touch
+  // zones, raycasts) must pass through here — never use clientX/Y raw.
+  function viewportToCanonical(sx, sy) {
+    if (!rotated) return { x: sx, y: sy };
+    return { x: sy, y: window.innerWidth - sx };
+  }
+
+  return {
+    renderer,
+    scene,
+    camera,
+    viewportToCanonical,
+    isRotated: () => rotated,
+  };
 }

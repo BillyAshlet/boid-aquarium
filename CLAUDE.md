@@ -27,12 +27,21 @@ This file is the engineering source of truth; if they conflict, this file wins.
 - **Vanilla JS + Three.js. No framework. Vite is a dev server only.**
 - **Desktop = simplified fallback** (fixed gravity, mouse/keys). Mobile is
   the real game and the performance budget.
-- **Landscape-only game** (two horizontal posts). Physics and rendering
-  assume landscape; portrait on touch devices shows a blocking "rotate
-  your phone" overlay. Android additionally attempts a real
-  `screen.orientation.lock()`. Device gravity is remapped through
-  `screen.orientation.angle` into screen-relative axes so world-down
-  stays visually consistent in every physical orientation.
+- **Canonical landscape frame（canonical 横屏系）.** The game world is
+  always landscape and is anchored to the PHYSICAL DEVICE frame, never
+  to orientation APIs (they lie: iPadOS reports angle 0 in docked
+  landscape while sensors stay portrait-referenced — field-tested
+  2026-07). Canonical hold = device top edge LEFT. Gravity remap
+  device→canonical is one fixed rotation in input.js; a frame stepper
+  (auto/0/90/180/270) on the panel covers the OS-auto-rotate ±180°
+  ambiguity. Presentation: touch device + portrait viewport → CSS-rotate
+  the #app wrapper 90° with swapped dimensions (fullscreen, no
+  letterbox). No rotate overlay: wrong holds self-correct physically,
+  like the real toy.
+- **Touch-coordinate constraint:** CSS transforms rotate pixels, not
+  coordinates. ALL canvas-space touch math (M3 touch zones, raycasts)
+  must go through `viewportToCanonical()` in scene.js — never use raw
+  clientX/Y.
 
 ## Conventions 约定
 
@@ -89,5 +98,13 @@ This file is the engineering source of truth; if they conflict, this file wins.
   (0.1 sluggish / 0.2 jittery per Billy). Zero-baseline decision:
   **physical zero (option A)** — real gravity is the reference, no
   session recalibration; revisit only if playtests demand a comfort offset.
-- **Next up:** Billy verifies axis remap on iPad (all four orientations,
-  arrow tracks real floor). Then M1: boids. See MILESTONES.md.
+- **2026-07-04 — Done:** Canonical-frame rework after iPad axis bug
+  (orientation APIs proven unreliable). Gravity now remaps device→
+  canonical via one fixed rotation; presentation rotates the #app
+  wrapper (verified: fullscreen, no letterbox, panel/UI rotate as one
+  unit); frame stepper `auto/0/90/180/270` added to panel; rotate
+  overlay deleted; `viewportToCanonical()` helper added in scene.js.
+  The `auto` heuristic (angle 270 → 180° offset) is UNVERIFIED — field
+  data from iPhone/iPad will confirm or refine it.
+- **Next up:** Billy's device verify (see M0 last checkbox). Then M1:
+  boids. See MILESTONES.md.

@@ -1,13 +1,17 @@
 import * as THREE from 'three';
 import { Pane } from 'tweakpane';
 import { GRAVITY } from './world.js';
-import { screenAngle, isPortrait } from './input.js';
+import { screenAngle } from './input.js';
 
 // The window into the machine: Tweakpane panel, always-on FPS counter,
 // and visualizers. Every invisible force in this game eventually gets a
 // drawable form here.
-export function createDebug({ world, scene, input }) {
-  const pane = new Pane({ title: 'the boid 水族馆' });
+export function createDebug({ world, scene, input, presentation }) {
+  // Mounted inside #app (via panel-holder) so it rotates with the game.
+  const pane = new Pane({
+    title: 'the boid 水族馆',
+    container: document.getElementById('panel-holder'),
+  });
 
   // Gravity arrow at tank center: direction = where "down" currently is,
   // length = strength relative to standard gravity.
@@ -25,6 +29,12 @@ export function createDebug({ world, scene, input }) {
 
   const inputFolder = pane.addFolder({ title: 'input 感应' });
   inputFolder.addBinding(input, 'flipSign', { label: 'flip sign' });
+  // Frame stepper: manual override for the auto-rotate ±180° ambiguity
+  // and the diagnosis tool for devices whose orientation APIs lie.
+  inputFolder.addBinding(input, 'frameOffset', {
+    label: 'frame',
+    options: { auto: 'auto', '0°': 0, '90°': 90, '180°': 180, '270°': 270 },
+  });
   // Sweet spot lives in the low range — field-tested: 0.1 sluggish,
   // 0.2 jittery, so the whole slider is that neighborhood.
   inputFolder.addBinding(input, 'smoothing', {
@@ -58,7 +68,9 @@ export function createDebug({ world, scene, input }) {
     if (g.lengthSq() > 1e-6) arrow.setDirection(g.clone().normalize());
     arrow.setLength(0.35 * (g.length() / GRAVITY), 0.06, 0.03);
     monitors.gravity = `x ${g.x.toFixed(2)}  y ${g.y.toFixed(2)}  z ${g.z.toFixed(2)}`;
-    monitors.screen = `${screenAngle()}°  ${isPortrait() ? 'portrait' : 'landscape'}`;
+    monitors.screen = `${screenAngle()}°  ${
+      window.innerHeight > window.innerWidth ? 'portrait' : 'landscape'
+    }${presentation.isRotated() ? ' (rotated)' : ''}  off ${input.resolveOffset()}°`;
 
     frames++;
     if (nowMs - windowStart > 500) {
