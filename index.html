@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>the boid 水族馆</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #071e3d;
+        touch-action: none;
+      }
+      canvas {
+        display: block;
+      }
+      #status {
+        position: fixed;
+        left: 12px;
+        bottom: 12px;
+        color: #9db8d8;
+        font: 12px/1.5 "Space Mono", ui-monospace, monospace;
+        pointer-events: none;
+        white-space: pre;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="status">the boid 水族馆 — pipeline check</div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
