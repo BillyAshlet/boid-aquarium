@@ -61,10 +61,21 @@ This file is the engineering source of truth; if they conflict, this file wins.
   touching **feel or coupling** moves in small, individually observable steps.
 - Build visualizers as a reflex: every force should be drawable.
 - At session end: update "Current state" below, then commit.
+  Every entry is dated (YYYY-MM-DD) — the file should tell you *when*
+  things happened, not just what.
 
 ## Current state 当前状态
 
-- **Done:** Session zero — repo, docs, Vite + HTTPS-on-LAN pipeline,
-  placeholder scene (spinning ring) to verify WebGL on the phone.
-- **Next up:** M0 — real scene scaffold, DeviceMotion permission flow +
-  gravity arrow, debug panel + FPS counter. See MILESTONES.md.
+- **2026-07-04 — Done:** Session zero — repo, docs, Vite + HTTPS-on-LAN
+  pipeline, placeholder scene (spinning ring). Verified on iPhone
+  (61 fps) and desktop. Design docs (VISIOn.md etc.) merged into repo;
+  old iCloud folder deleted. Pushed to GitHub main (public repo).
+- **2026-07-04 — Done (desktop-verified):** M0 built — world.js (fixed
+  60 Hz timestep, shared gravity vector), scene.js (fixed auto-framing
+  camera, glass tank shell), input.js (iOS permission button, sign-flip
+  + smoothing, `active` = data actually arriving), debug.js (Tweakpane,
+  gravity arrow, always-on FPS). `npm run dev` = HTTPS for phone,
+  `npm run dev:http` = plain HTTP for preview tooling.
+- **Next up:** Billy's phone test of M0 (arrow must track the real
+  floor in all orientations — use flip-sign toggle if it points at the
+  ceiling). Then M1: boids. See MILESTONES.md.

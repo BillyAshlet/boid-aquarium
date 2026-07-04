@@ -1,8 +1,9 @@
 import { defineConfig } from 'vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 
-// --host is passed in the npm script so the phone can reach the dev server
-// over LAN; basicSsl provides the self-signed cert DeviceMotion requires.
+// HTTPS by default: iOS DeviceMotion only works in a secure context, and
+// the phone is the primary device. `npm run dev:http` opts out for local
+// preview tooling that can't handle the self-signed cert.
 export default defineConfig({
-  plugins: [basicSsl()],
+  plugins: process.env.NO_HTTPS ? [] : [basicSsl()],
 });

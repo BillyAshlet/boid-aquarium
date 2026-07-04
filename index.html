@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <title>the boid 水族馆</title>
     <style>
@@ -22,16 +22,30 @@
       #status {
         position: fixed;
         left: 12px;
-        bottom: 12px;
+        bottom: max(12px, env(safe-area-inset-bottom));
         color: #9db8d8;
         font: 12px/1.5 "Space Mono", ui-monospace, monospace;
         pointer-events: none;
         white-space: pre;
       }
+      #enable-tilt {
+        position: fixed;
+        left: 50%;
+        bottom: 18%;
+        transform: translateX(-50%);
+        padding: 14px 28px;
+        font: 14px "Space Mono", ui-monospace, monospace;
+        color: #cfe3f7;
+        background: rgba(12, 84, 166, 0.35);
+        border: 1px solid #2e6db4;
+        border-radius: 8px;
+        -webkit-tap-highlight-color: transparent;
+      }
     </style>
   </head>
   <body>
-    <div id="status">the boid 水族馆 — pipeline check</div>
+    <div id="status">…</div>
+    <button id="enable-tilt" hidden>enable tilt 🌀</button>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
