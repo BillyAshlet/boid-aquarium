@@ -19,8 +19,9 @@ permission, and watch a gravity arrow track the phone's tilt in a lit, empty tan
 - [x] Core canonical-frame verify on device: arrow tracks the real floor through orientation changes
 - [x] Symmetric landscapes: 180° frame resolved from gravity (hysteresis), physics + presentation flip together — emulation-verified, both holds identical
 - [x] One Euro adaptive filter replaces fixed smoothing (device-frame, per-axis)
-- [ ] **Device verify:** both landscape holds present identically on iPhone (auto-rotate on and off); flip transition feels clean, no flapping near vertical
-- [ ] **One Euro tuning on device:** minCutoff first (hold still → calm), then beta (whip → no lag); note the values that feel right
+- [x] Three-frame model (hold + framebuffer): fixes the iPad mirrored-physics bug; flip debounce (`flipDelay`) + `hold frame 🔒` tuning lock
+- [ ] **Device verify:** both landscape holds — visuals AND physics symmetric — on iPad (locked + unlocked rotation) and iPhone (auto-rotate on/off); flip feels deliberate, no mid-tuning surprises
+- [ ] **One Euro tuning on device (🔒 on):** minCutoff first (hold still → calm), then beta (whip → no lag); note the values that feel right
 
 ## M1 — Life 鱼群
 **Playable state:** a school of fish lives in the tank. You can't touch them

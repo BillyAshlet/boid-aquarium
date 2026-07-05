@@ -5,11 +5,11 @@ import { createDebug } from './debug.js';
 
 const world = new World();
 const input = new MotionInput(world);
-// Presentation follows the same resolved frame as physics — they flip
-// together, so world-down is honest in every hold.
+// Presentation and physics share the same hold state (input owns both
+// halves of the frame model), so they cannot disagree.
 const presentation = createScene(
   document.getElementById('app'),
-  () => input.resolveOffset() === 180
+  () => input.presentationRotation()
 );
 const { renderer, scene, camera } = presentation;
 mountEnableButton(input);

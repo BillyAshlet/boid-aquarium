@@ -3,20 +3,28 @@ import { GRAVITY } from './world.js';
 
 // --- The canonical landscape frame / canonical 横屏坐标系 ---
 //
-// The game world is ALWAYS landscape, anchored to the PHYSICAL DEVICE —
-// orientation APIs are never consulted for physics or presentation
-// (they lie; field-tested on iPadOS 2026-07). Sensors report in the
-// portrait-referenced device frame (+X short-axis right, +Y toward top
-// edge, +Z out of screen). Device → canonical is one fixed rotation:
-//   canonical_x = −device_y,  canonical_y = +device_x,  canonical_z = device_z
+// Three frames matter, and keeping them explicit is what keeps physics
+// and presentation from silently disagreeing (the 2026-07-05 iPad
+// mirror bug was a missing frame term):
 //
-// BOTH landscape holds are first-class: which of the two 180°-apart
-// frames is presented gets resolved from gravity itself — down swinging
-// toward device +X (top edge right) means the flipped hold, toward −X
-// the canonical hold, with a hysteresis dead band so near-vertical or
-// face-up holds never flap. Physics and presentation flip together, so
-// world-down stays honest and the player never has to know there were
-// ever two landscapes.
+//   DEVICE  — the physical sensor frame, portrait-referenced
+//             (+X short-axis right, +Y toward top edge, +Z out of screen).
+//   HOLD    — how the user physically holds the device. Resolved from
+//             gravity with hysteresis + debounce. H = 270° (canonical,
+//             top edge left) or 90° (flipped, top edge right).
+//   FRAMEBUFFER — the box the OS hands us to draw in, relative to the
+//             device. F ∈ {0, 90, 180, 270}. The OS moves this when it
+//             auto-rotates; rotation-locked devices keep it fixed.
+//
+// Physics: device → canonical is one fixed rotation, plus 180° when the
+// hold is flipped. Gravity only — no orientation APIs.
+//
+// Presentation: CSS rotation R = −(H + F) mod 360. H comes from gravity.
+// F is tracked WITHOUT trusting any API absolutely:
+//   - angle DELTAS only (a lying zero-point cancels out in differences),
+//   - one calibration on the first sensor reading: the user just tapped
+//     a button they could read, so the screen was readable → R ≈ 0 at
+//     that instant pins F. Physical ground truth, not API trust.
 
 // One Euro Filter (Casiez, Roussel & Vogel, CHI 2012), written from the
 // paper's equations. Adaptive low-pass: the cutoff frequency rises with
@@ -51,7 +59,6 @@ class OneEuro1D {
   }
 }
 
-// Kept for the debug panel's screen monitor only — never for logic.
 export function screenAngle() {
   if (screen.orientation && typeof screen.orientation.angle === 'number') {
     return screen.orientation.angle;
@@ -59,9 +66,14 @@ export function screenAngle() {
   return typeof window.orientation === 'number' ? window.orientation : 0;
 }
 
-// Hysteresis threshold for the gravity-resolved frame flip (m/s²).
-// ~3.5 ≈ 21° of tilt past level before we commit to a hold.
+// Hysteresis threshold for the gravity-resolved hold flip (m/s²).
+// ~3.5 ≈ 21° of tilt past level before a flip is even considered.
 const FLIP_THRESHOLD = 3.5;
+
+// If field testing shows the frame going WRONG after OS rotations
+// (rather than staying correct), the platform's angle sign convention
+// is opposite to assumed — negate the delta here.
+const ANGLE_DELTA_SIGN = 1;
 
 export class MotionInput {
   constructor(world) {
@@ -71,18 +83,49 @@ export class MotionInput {
     this.flipSign = true; // field-tested on iPhone: raw reading needs flipping
     this.frameOffset = 'auto'; // 'auto' (gravity-resolved) | 0 | 180
     // One Euro params. Tune minCutoff FIRST (hold still, lower it until
-    // calm), then beta (whip the phone, raise it until no lag). Defaults
-    // are a prior for iOS Safari sensor noise — tune fresh on device.
+    // calm), then beta (whip the phone, raise it until no lag).
     this.minCutoff = 0.6; // Hz — still-state calm
     this.beta = 0.12; // cutoff gain per unit derivative — motion response
-    this.flipped = false; // gravity-resolved 180° frame state
+    // Flip ergonomics (Problem 2, 2026-07-05):
+    this.flipDelay = 1.0; // s past threshold before a flip commits
+    this.holdFrame = false; // 🔒 workshop tool: freeze flip + framebuffer tracking
+    this.flipped = false; // gravity-resolved hold: false = canonical (H 270°)
+    this._pendingFlipAt = null; // debounce timer start (ms)
     this._filters = [new OneEuro1D(), new OneEuro1D(), new OneEuro1D()];
-    // Filtered true-gravity direction in the DEVICE frame (filter input
-    // is continuous there; it never sees our 180° frame snaps).
+    // Filtered true-gravity direction in the DEVICE frame (continuous
+    // there; the filter never sees our 180° frame snaps).
     this._device = new THREE.Vector3(0, -GRAVITY, 0);
     this._canonical = new THREE.Vector3(0, -GRAVITY, 0);
     this._lastT = null;
+    this._calibrated = false;
+
+    // Framebuffer tracking: initial guess, then deltas only.
+    // Portrait viewport → F = 0 (portrait framebuffer). Landscape →
+    // iPhone-convention guess from the angle; lying devices get fixed
+    // by the readable-prior calibration on first sensor reading.
+    const a = ((screenAngle() % 360) + 360) % 360;
+    this._F =
+      window.innerHeight > window.innerWidth
+        ? 0
+        : a === 270 || a === 180
+          ? 270
+          : 90;
+    this._lastAngle = a;
+    this._onAngle = this._onAngle.bind(this);
+    window.addEventListener('resize', this._onAngle);
+    if (screen.orientation) {
+      screen.orientation.addEventListener('change', this._onAngle);
+    }
     this._onMotion = this._onMotion.bind(this);
+  }
+
+  _onAngle() {
+    const a = ((screenAngle() % 360) + 360) % 360;
+    if (!this.holdFrame) {
+      const delta = (((a - this._lastAngle) * ANGLE_DELTA_SIGN) % 360 + 360) % 360;
+      this._F = (this._F + delta) % 360;
+    }
+    this._lastAngle = a;
   }
 
   // iOS 13+ gates motion data behind a permission prompt that can only
@@ -104,9 +147,17 @@ export class MotionInput {
     return true;
   }
 
+  // Physics 180°: manual stepper wins, else the gravity-resolved hold.
   resolveOffset() {
     if (this.frameOffset !== 'auto') return Number(this.frameOffset);
     return this.flipped ? 180 : 0;
+  }
+
+  // CSS rotation for the presentation half: R = −(H + F).
+  // Same H as physics — the two halves cannot disagree by construction.
+  presentationRotation() {
+    const H = this.resolveOffset() === 180 ? 90 : 270;
+    return (720 - H - this._F) % 360;
   }
 
   _onMotion(event) {
@@ -135,9 +186,40 @@ export class MotionInput {
       this._filters[2].filter(g.z * sign, dt)
     );
 
-    // 3. Resolve which landscape hold we're in, from gravity itself.
-    if (this._device.x > FLIP_THRESHOLD) this.flipped = true;
-    else if (this._device.x < -FLIP_THRESHOLD) this.flipped = false;
+    // 3. Which hold? Hysteresis dead band + temporal debounce: the
+    // threshold must stay crossed for flipDelay seconds continuously.
+    // Real rotations last much longer; hand tremor doesn't.
+    const wantFlip =
+      this._device.x > FLIP_THRESHOLD
+        ? true
+        : this._device.x < -FLIP_THRESHOLD
+          ? false
+          : null;
+
+    if (!this._calibrated) {
+      // First reading: the user just tapped/loaded a screen they could
+      // read, so commit the hold immediately (no debounce) and, in a
+      // landscape viewport, pin F so that R = 0 right now. This is the
+      // readable-prior calibration — physical ground truth.
+      this._calibrated = true;
+      if (wantFlip !== null) this.flipped = wantFlip;
+      if (window.innerWidth > window.innerHeight) {
+        const H = this.flipped ? 90 : 270;
+        this._F = (360 - H) % 360;
+      }
+    } else if (
+      this.holdFrame ||
+      this.frameOffset !== 'auto' ||
+      wantFlip === null ||
+      wantFlip === this.flipped
+    ) {
+      this._pendingFlipAt = null;
+    } else if (this._pendingFlipAt === null) {
+      this._pendingFlipAt = now;
+    } else if ((now - this._pendingFlipAt) / 1000 >= this.flipDelay) {
+      this.flipped = wantFlip;
+      this._pendingFlipAt = null;
+    }
 
     // 4. Device → canonical (fixed rotation), then the resolved 180°.
     let x = -this._device.y;

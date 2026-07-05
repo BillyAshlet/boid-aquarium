@@ -1,15 +1,13 @@
 import * as THREE from 'three';
 import { TANK } from './world.js';
 
-// Presentation: canonical landscape → viewport. Two trusted signals
-// only: the viewport's own aspect (it IS the box we draw into) and the
-// gravity-resolved flip from input (via getFlip). Orientation APIs are
-// never consulted. Four states:
-//   portrait viewport  → rotate  90° (canonical hold) or 270° (flipped)
-//   landscape viewport → rotate   0° (canonical hold) or 180° (flipped)
-// Physics flips with presentation (input.js applies the same 180°), so
-// world-down stays honest in every hold. Desktop never rotates.
-export function createScene(wrapper, getFlip = () => false) {
+// Presentation: canonical landscape → viewport. The CSS rotation comes
+// from input.js (R = −(hold + framebuffer), see the frame model there);
+// this module just applies whatever R says and owns the geometry:
+// dimension swap, camera framing, and viewport→canonical coordinates.
+// Desktop never rotates. Physics and presentation share the same hold
+// state, so they cannot disagree by construction.
+export function createScene(wrapper, getRotation = () => 0) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   wrapper.appendChild(renderer.domElement);
@@ -48,10 +46,7 @@ export function createScene(wrapper, getFlip = () => false) {
 
   function computeRotation() {
     if (navigator.maxTouchPoints === 0) return 0; // desktop never rotates
-    const portrait = window.innerHeight > window.innerWidth;
-    const flip = getFlip();
-    if (portrait) return flip ? 270 : 90;
-    return flip ? 180 : 0;
+    return getRotation();
   }
 
   // Cheap enough to call every frame: bails unless rotation state or

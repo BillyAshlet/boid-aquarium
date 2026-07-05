@@ -69,6 +69,10 @@ export function createDebug({ world, scene, input, presentation }) {
   // then beta (whip the phone, raise until no lag).
   addParam(inputFolder, input, 'minCutoff', { min: 0.05, max: 3, step: 0.05 });
   addParam(inputFolder, input, 'beta', { min: 0, max: 0.5, step: 0.005 });
+  // Flip ergonomics: debounce (threshold must hold this long) and the
+  // workshop lock for tuning sessions.
+  addParam(inputFolder, input, 'flipDelay', { min: 0, max: 3, step: 0.1 });
+  addParam(inputFolder, input, 'holdFrame', { label: 'hold frame 🔒' });
   inputFolder.addBinding(monitors, 'gravity', {
     readonly: true,
     label: 'gravity',
@@ -101,7 +105,9 @@ export function createDebug({ world, scene, input, presentation }) {
     monitors.gravity = `x ${g.x.toFixed(2)}  y ${g.y.toFixed(2)}  z ${g.z.toFixed(2)}`;
     monitors.screen = `${screenAngle()}°  ${
       window.innerHeight > window.innerWidth ? 'portrait' : 'landscape'
-    }  rot ${presentation.rotationDeg()}°  off ${input.resolveOffset()}°`;
+    }  F${input._F}  rot ${presentation.rotationDeg()}°  off ${input.resolveOffset()}°${
+      input.holdFrame ? '  🔒' : ''
+    }`;
 
     frames++;
     if (nowMs - windowStart > 500) {
