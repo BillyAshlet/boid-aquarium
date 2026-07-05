@@ -31,13 +31,19 @@ This file is the engineering source of truth; if they conflict, this file wins.
   always landscape and is anchored to the PHYSICAL DEVICE frame, never
   to orientation APIs (they lie: iPadOS reports angle 0 in docked
   landscape while sensors stay portrait-referenced — field-tested
-  2026-07). Canonical hold = device top edge LEFT. Gravity remap
-  device→canonical is one fixed rotation in input.js; a frame stepper
-  (auto/0/90/180/270) on the panel covers the OS-auto-rotate ±180°
-  ambiguity. Presentation: touch device + portrait viewport → CSS-rotate
-  the #app wrapper 90° with swapped dimensions (fullscreen, no
-  letterbox). No rotate overlay: wrong holds self-correct physically,
-  like the real toy.
+  2026-07). Gravity remap device→canonical is one fixed rotation in
+  input.js. **Both landscape holds are first-class**: the 180° frame
+  choice is resolved from gravity itself (hysteresis ±3.5 m/s²), and
+  physics + presentation flip together, so the game presents identically
+  whichever way the player grabs the device. Presentation rotates the
+  #app wrapper (90/270 for portrait viewports, 0/180 for landscape;
+  fullscreen, no letterbox). Orientation APIs appear nowhere in logic —
+  only in the panel's screen monitor. Panel `frame` stepper
+  (auto/0/180) is the manual override for diagnosis.
+- **Sensor smoothing = One Euro filter** (Casiez et al., CHI 2012),
+  per-axis in the device frame, before the canonical remap. Panel
+  params: `minCutoff` (still-state calm — tune first), `beta` (motion
+  responsiveness — tune second). Tuned fresh on device.
 - **Touch-coordinate constraint:** CSS transforms rotate pixels, not
   coordinates. ALL canvas-space touch math (M3 touch zones, raycasts)
   must go through `viewportToCanonical()` in scene.js — never use raw
@@ -63,7 +69,9 @@ This file is the engineering source of truth; if they conflict, this file wins.
   - `src/game.js` — progression state (rings placed, orbit trigger, quiet celebration).
   - `src/debug.js` — Tweakpane panel, FPS counter, force/field visualizers, preset save/load.
 - **All tunable parameters** live in one exported object per module and are
-  registered with the debug panel. Presets export/import as JSON in `presets/`.
+  registered with the debug panel **through `addParam()` in debug.js** —
+  every param carries live value + range + default, with a per-param ↺
+  reset and a global "reset all". Presets export/import as JSON in `presets/`.
 - **Language:** English primary, Chinese annotations where they help. 主英文辅中文。
 
 ## Workflow rules 工作方式
@@ -106,5 +114,17 @@ This file is the engineering source of truth; if they conflict, this file wins.
   overlay deleted; `viewportToCanonical()` helper added in scene.js.
   The `auto` heuristic (angle 270 → 180° offset) is UNVERIFIED — field
   data from iPhone/iPad will confirm or refine it.
-- **Next up:** Billy's device verify (see M0 last checkbox). Then M1:
-  boids. See MILESTONES.md.
+- **2026-07-05 — Done:** Symmetric landscapes + One Euro. The 180°
+  frame is now resolved from gravity itself (hysteresis, dead band
+  ±3.5 m/s²) — the auto-heuristic from screen.orientation.angle is
+  deleted; orientation APIs no longer feed any logic. Presentation has
+  four states (90/270 portrait, 0/180 landscape); verified via
+  synthetic DeviceMotionEvents: both holds yield identical world
+  gravity (0,−9.8,0) with mirrored presentation. Smoothing lerp
+  replaced by per-axis One Euro in the device frame (defaults
+  minCutoff 0.6 / beta 0.12 — untuned prior). Panel: addParam()
+  pattern — every param shows range+default, per-param ↺, reset all.
+- **Next up:** Billy's device pass: (1) both landscape holds present
+  identically on iPhone with auto-rotate on/off; (2) One Euro tuning —
+  minCutoff first, then beta; save first preset values. Then M0 closes
+  and M1 (boids) begins. See MILESTONES.md.

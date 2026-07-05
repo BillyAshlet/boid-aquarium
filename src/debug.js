@@ -13,6 +13,38 @@ export function createDebug({ world, scene, input, presentation }) {
     container: document.getElementById('panel-holder'),
   });
 
+  const resets = [];
+
+  // Every tunable registers through here and carries three things:
+  // live value, explicit range, and its default (the value at
+  // registration). Hover the label for range + default; click ↺ to go
+  // back to a known state. This is the per-param one-slot preset.
+  function addParam(folder, obj, key, opts = {}) {
+    const def = obj[key];
+    const binding = folder.addBinding(obj, key, opts);
+    const label = binding.element.querySelector('.tp-lblv_l');
+    if (label) {
+      const range =
+        opts.min !== undefined ? `range ${opts.min}–${opts.max} · ` : '';
+      label.title = `${range}default ${def}`;
+      const btn = document.createElement('span');
+      btn.className = 'param-reset';
+      btn.textContent = '↺';
+      btn.title = `reset to ${def}`;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        obj[key] = def;
+        binding.refresh();
+      });
+      label.appendChild(btn);
+    }
+    resets.push(() => {
+      obj[key] = def;
+      binding.refresh();
+    });
+    return binding;
+  }
+
   // Gravity arrow at tank center: direction = where "down" currently is,
   // length = strength relative to standard gravity.
   const arrow = new THREE.ArrowHelper(
@@ -28,20 +60,15 @@ export function createDebug({ world, scene, input, presentation }) {
   const monitors = { gravity: '', screen: '' };
 
   const inputFolder = pane.addFolder({ title: 'input 感应' });
-  inputFolder.addBinding(input, 'flipSign', { label: 'flip sign' });
-  // Frame stepper: manual override for the auto-rotate ±180° ambiguity
-  // and the diagnosis tool for devices whose orientation APIs lie.
-  inputFolder.addBinding(input, 'frameOffset', {
+  addParam(inputFolder, input, 'flipSign', { label: 'flip sign' });
+  addParam(inputFolder, input, 'frameOffset', {
     label: 'frame',
-    options: { auto: 'auto', '0°': 0, '90°': 90, '180°': 180, '270°': 270 },
+    options: { auto: 'auto', '0°': 0, '180°': 180 },
   });
-  // Sweet spot lives in the low range — field-tested: 0.1 sluggish,
-  // 0.2 jittery, so the whole slider is that neighborhood.
-  inputFolder.addBinding(input, 'smoothing', {
-    min: 0.01,
-    max: 0.3,
-    step: 0.005,
-  });
+  // One Euro: tune minCutoff FIRST (hold still, lower until calm),
+  // then beta (whip the phone, raise until no lag).
+  addParam(inputFolder, input, 'minCutoff', { min: 0.05, max: 3, step: 0.05 });
+  addParam(inputFolder, input, 'beta', { min: 0, max: 0.5, step: 0.005 });
   inputFolder.addBinding(monitors, 'gravity', {
     readonly: true,
     label: 'gravity',
@@ -53,7 +80,11 @@ export function createDebug({ world, scene, input, presentation }) {
 
   const view = { gravityArrow: true };
   const viewFolder = pane.addFolder({ title: 'visualizers 可视化' });
-  viewFolder.addBinding(view, 'gravityArrow', { label: 'gravity arrow' });
+  addParam(viewFolder, view, 'gravityArrow', { label: 'gravity arrow' });
+
+  pane
+    .addButton({ title: 'reset all ↺' })
+    .on('click', () => resets.forEach((r) => r()));
 
   // FPS lives in the corner div, not the pane — always visible, even
   // with the panel collapsed. Feel bugs and perf bugs look identical on
@@ -70,7 +101,7 @@ export function createDebug({ world, scene, input, presentation }) {
     monitors.gravity = `x ${g.x.toFixed(2)}  y ${g.y.toFixed(2)}  z ${g.z.toFixed(2)}`;
     monitors.screen = `${screenAngle()}°  ${
       window.innerHeight > window.innerWidth ? 'portrait' : 'landscape'
-    }${presentation.isRotated() ? ' (rotated)' : ''}  off ${input.resolveOffset()}°`;
+    }  rot ${presentation.rotationDeg()}°  off ${input.resolveOffset()}°`;
 
     frames++;
     if (nowMs - windowStart > 500) {

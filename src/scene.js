@@ -1,13 +1,15 @@
 import * as THREE from 'three';
 import { TANK } from './world.js';
 
-// Presentation: canonical landscape → viewport. The only orientation
-// signal we trust is the viewport's own aspect — it cannot lie, it IS
-// the box we draw into. Touch device + portrait viewport → rotate the
-// whole #app wrapper 90° CW and swap dimensions, so the landscape game
-// fills the screen (no letterbox) and reads correctly in the canonical
-// hold (device top edge left). Desktop never rotates.
-export function createScene(wrapper) {
+// Presentation: canonical landscape → viewport. Two trusted signals
+// only: the viewport's own aspect (it IS the box we draw into) and the
+// gravity-resolved flip from input (via getFlip). Orientation APIs are
+// never consulted. Four states:
+//   portrait viewport  → rotate  90° (canonical hold) or 270° (flipped)
+//   landscape viewport → rotate   0° (canonical hold) or 180° (flipped)
+// Physics flips with presentation (input.js applies the same 180°), so
+// world-down stays honest in every hold. Desktop never rotates.
+export function createScene(wrapper, getFlip = () => false) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   wrapper.appendChild(renderer.domElement);
@@ -41,26 +43,43 @@ export function createScene(wrapper) {
   );
   scene.add(panes, edges);
 
-  let rotated = false;
+  let rotationDeg = 0;
+  let appliedKey = '';
 
-  function resize() {
-    const isTouch = navigator.maxTouchPoints > 0;
+  function computeRotation() {
+    if (navigator.maxTouchPoints === 0) return 0; // desktop never rotates
+    const portrait = window.innerHeight > window.innerWidth;
+    const flip = getFlip();
+    if (portrait) return flip ? 270 : 90;
+    return flip ? 180 : 0;
+  }
+
+  // Cheap enough to call every frame: bails unless rotation state or
+  // viewport actually changed.
+  function apply() {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    rotated = isTouch && vh > vw;
-    const w = rotated ? vh : vw;
-    const h = rotated ? vw : vh;
+    rotationDeg = computeRotation();
+    const key = `${rotationDeg}:${vw}x${vh}`;
+    if (key === appliedKey) return;
+    appliedKey = key;
 
-    if (rotated) {
-      // A w×h wrapper rotated 90° CW about its top-left, after being
-      // shifted up by its own height, lands exactly on the vh×vw
-      // viewport — fullscreen, dimension-swapped.
-      wrapper.style.width = `${w}px`;
-      wrapper.style.height = `${h}px`;
+    const swap = rotationDeg === 90 || rotationDeg === 270;
+    const w = swap ? vh : vw;
+    const h = swap ? vw : vh;
+
+    // transform-origin is top-left (index.html); transforms compose
+    // right-to-left, so the translate positions the box, the rotation
+    // lands it exactly on the viewport — fullscreen, no letterbox.
+    wrapper.style.width = `${w}px`;
+    wrapper.style.height = `${h}px`;
+    if (rotationDeg === 90) {
       wrapper.style.transform = 'rotate(90deg) translateY(-100%)';
+    } else if (rotationDeg === 270) {
+      wrapper.style.transform = 'rotate(-90deg) translateX(-100%)';
+    } else if (rotationDeg === 180) {
+      wrapper.style.transform = 'rotate(180deg) translate(-100%, -100%)';
     } else {
-      wrapper.style.width = '100%';
-      wrapper.style.height = '100%';
       wrapper.style.transform = 'none';
     }
 
@@ -85,20 +104,30 @@ export function createScene(wrapper) {
   // things settle.
   let settleTimer = 0;
   function onResize() {
-    resize();
+    apply();
     clearTimeout(settleTimer);
-    settleTimer = setTimeout(resize, 300);
+    settleTimer = setTimeout(apply, 300);
   }
   window.addEventListener('resize', onResize);
   window.addEventListener('orientationchange', onResize);
-  resize();
+  apply();
 
   // CSS transforms rotate pixels, not coordinates: touch positions
   // arrive in viewport space. ALL canvas-space touch math (M3 touch
   // zones, raycasts) must pass through here — never use clientX/Y raw.
   function viewportToCanonical(sx, sy) {
-    if (!rotated) return { x: sx, y: sy };
-    return { x: sy, y: window.innerWidth - sx };
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    switch (rotationDeg) {
+      case 90:
+        return { x: sy, y: vw - sx };
+      case 270:
+        return { x: vh - sy, y: sx };
+      case 180:
+        return { x: vw - sx, y: vh - sy };
+      default:
+        return { x: sx, y: sy };
+    }
   }
 
   return {
@@ -106,6 +135,7 @@ export function createScene(wrapper) {
     scene,
     camera,
     viewportToCanonical,
-    isRotated: () => rotated,
+    rotationDeg: () => rotationDeg,
+    updateOrientation: apply,
   };
 }

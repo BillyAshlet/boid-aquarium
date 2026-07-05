@@ -16,7 +16,11 @@ permission, and watch a gravity arrow track the phone's tilt in a lit, empty tan
 - [x] Debug panel (Tweakpane) + always-on FPS counter
 - [x] Desktop fallback: fixed gravity, panel works with mouse
 - [x] Canonical landscape frame: gravity remap anchored to the device frame (API-free); presentation rotation (CSS 90° + dimension swap) for portrait viewports; frame stepper on panel; rotate overlay deleted
-- [ ] **Device verify:** iPad rotation-locked — turn it in your hands, arrow never leaves the real floor. iPhone — canonical hold reads correctly; with auto-rotate on, check the `auto` frame guess in both landscapes (stepper reveals the right value if it guesses wrong)
+- [x] Core canonical-frame verify on device: arrow tracks the real floor through orientation changes
+- [x] Symmetric landscapes: 180° frame resolved from gravity (hysteresis), physics + presentation flip together — emulation-verified, both holds identical
+- [x] One Euro adaptive filter replaces fixed smoothing (device-frame, per-axis)
+- [ ] **Device verify:** both landscape holds present identically on iPhone (auto-rotate on and off); flip transition feels clean, no flapping near vertical
+- [ ] **One Euro tuning on device:** minCutoff first (hold still → calm), then beta (whip → no lag); note the values that feel right
 
 ## M1 — Life 鱼群
 **Playable state:** a school of fish lives in the tank. You can't touch them
