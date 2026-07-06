@@ -74,8 +74,12 @@ This file is the engineering source of truth; if they conflict, this file wins.
   - `src/debug.js` — Tweakpane panel, FPS counter, force/field visualizers, preset save/load.
 - **All tunable parameters** live in one exported object per module and are
   registered with the debug panel **through `addParam()` in debug.js** —
-  every param carries live value + range + default, with a per-param ↺
-  reset and a global "reset all". Presets export/import as JSON in `presets/`.
+  every param carries live value + range + default, a per-param ↺ reset
+  (restores value AND range), and recursive zoom on numeric sliders:
+  ⊕ halves the range, ⊖ doubles it, both re-centered on the current
+  value. Optional `hardMin`/`hardMax` clamp how far ⊖ can widen (use for
+  physically meaningless regions, e.g. negative beta). Global "reset
+  all". Presets export/import as JSON in `presets/`.
 - **Language:** English primary, Chinese annotations where they help. 主英文辅中文。
 
 ## Workflow rules 工作方式
@@ -139,6 +143,12 @@ This file is the engineering source of truth; if they conflict, this file wins.
   under 2.5 s of flipped gravity; unlock commits. Note: debounce clock
   starts when the FILTERED signal crosses threshold, so perceived delay
   ≈ flipDelay + filter convergence (~0.3–0.5 s).
+- **2026-07-06 — Done:** Panel recursive zoom + wider smoothing bounds.
+  minCutoff 0.05–10 Hz (hard cap 60; ≥10 ≈ near-raw at 60 Hz sensors),
+  beta 0–1.5 (hard cap 10). addParam() gained ⊕/⊖ zoom (halve/double
+  range, re-centered on current value; step auto-scales; hardMin/Max
+  clamp; ↺ restores value + range). Verified: zoom math, clamps,
+  value preservation across rebuilds, reset.
 - **Next up:** Billy's device re-test: (1) both landscape holds —
   symmetric visuals AND symmetric physics this time; (2) tuning session
   with 🔒 on: One Euro (minCutoff first, then beta) + flipDelay feel;
