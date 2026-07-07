@@ -95,6 +95,19 @@ This file is the engineering source of truth; if they conflict, this file wins.
   Every entry is dated (YYYY-MM-DD) — the file should tell you *when*
   things happened, not just what.
 
+## Open questions 待决
+
+- **Per-axis tilt gain（横竖轴增益差）— revisit during M2 ring tuning.**
+  Observed 2026-07-06: horizontal arrow response feels subtly damped vs
+  vertical in landscape holds. Billy's hypothesis: human wrist
+  kinematics produce less angular velocity along the phone's short axis
+  than its long axis — the sensor reads real, smaller signals, not
+  filter attenuation (both axes share the same One Euro). Candidate fix
+  if it matters: per-axis gain compensation after the canonical remap.
+  Also check before building anything: 3D perspective foreshortening of
+  the arrow may exaggerate the perception. **Do not act until rings
+  drift under tilt in M2** — an arrow alone can't judge gameplay impact.
+
 ## Current state 当前状态
 
 - **2026-07-04 — Done:** Session zero — repo, docs, Vite + HTTPS-on-LAN
@@ -149,7 +162,12 @@ This file is the engineering source of truth; if they conflict, this file wins.
   range, re-centered on current value; step auto-scales; hardMin/Max
   clamp; ↺ restores value + range). Verified: zoom math, clamps,
   value preservation across rebuilds, reset.
-- **Next up:** Billy's device re-test: (1) both landscape holds —
-  symmetric visuals AND symmetric physics this time; (2) tuning session
-  with 🔒 on: One Euro (minCutoff first, then beta) + flipDelay feel;
-  save first preset values. Then M0 closes and M1 (boids) begins.
+- **2026-07-06 — M0 CLOSED ✅.** Device re-test passed: both landscape
+  holds symmetric in physics and visuals. Field-tuned values promoted
+  to code defaults (minCutoff 2.0, beta 1.3, flipDelay 3.0) and bottled
+  in `presets/m0-input-baseline.json`; flipDelay slider max widened to
+  5 (tuned value sat at the old edge). Per-axis tilt-gain observation
+  recorded under Open questions, deferred to M2.
+- **Next up:** M1 — Life 鱼群. Boids in the tank (see MILESTONES.md):
+  separation/alignment/cohesion, obstacle avoidance via forward ray,
+  5DOF (roll locked), perception visualizers, all params via addParam.

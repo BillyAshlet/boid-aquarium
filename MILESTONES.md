@@ -5,7 +5,7 @@ fine — that's the contract. If it starts to feel like grinding, stop and ask w
 
 ---
 
-## M0 — The Pipeline 管道 ✅→
+## M0 — The Pipeline 管道 ✅ closed 2026-07-06
 **Playable state:** open the game on the iPhone over local HTTPS, grant motion
 permission, and watch a gravity arrow track the phone's tilt in a lit, empty tank.
 
@@ -20,8 +20,8 @@ permission, and watch a gravity arrow track the phone's tilt in a lit, empty tan
 - [x] Symmetric landscapes: 180° frame resolved from gravity (hysteresis), physics + presentation flip together — emulation-verified, both holds identical
 - [x] One Euro adaptive filter replaces fixed smoothing (device-frame, per-axis)
 - [x] Three-frame model (hold + framebuffer): fixes the iPad mirrored-physics bug; flip debounce (`flipDelay`) + `hold frame 🔒` tuning lock
-- [ ] **Device verify:** both landscape holds — visuals AND physics symmetric — on iPad (locked + unlocked rotation) and iPhone (auto-rotate on/off); flip feels deliberate, no mid-tuning surprises
-- [ ] **One Euro tuning on device (🔒 on):** minCutoff first (hold still → calm), then beta (whip → no lag); note the values that feel right
+- [x] **Device verify:** both landscape holds symmetric in visuals AND physics (2026-07-06)
+- [x] **One Euro tuning on device (🔒 on):** landed minCutoff 2.0 / beta 1.3 / flipDelay 3.0 → now the code defaults, bottled in `presets/m0-input-baseline.json`
 
 ## M1 — Life 鱼群
 **Playable state:** a school of fish lives in the tank. You can't touch them

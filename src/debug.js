@@ -142,7 +142,7 @@ export function createDebug({ world, scene, input, presentation }) {
   // workshop lock for tuning sessions.
   addParam(inputFolder, input, 'flipDelay', {
     min: 0,
-    max: 3,
+    max: 5, // field-tuned value sat at the old max (3) — headroom added
     step: 0.1,
     hardMin: 0,
     hardMax: 10,

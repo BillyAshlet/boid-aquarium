@@ -84,10 +84,12 @@ export class MotionInput {
     this.frameOffset = 'auto'; // 'auto' (gravity-resolved) | 0 | 180
     // One Euro params. Tune minCutoff FIRST (hold still, lower it until
     // calm), then beta (whip the phone, raise it until no lag).
-    this.minCutoff = 0.6; // Hz — still-state calm
-    this.beta = 0.12; // cutoff gain per unit derivative — motion response
+    // Defaults = field-tuned 2026-07-06 (Billy, iPhone + iPad); also
+    // bottled in presets/m0-input-baseline.json.
+    this.minCutoff = 2.0; // Hz — still-state calm
+    this.beta = 1.3; // cutoff gain per unit derivative — motion response
     // Flip ergonomics (Problem 2, 2026-07-05):
-    this.flipDelay = 1.0; // s past threshold before a flip commits
+    this.flipDelay = 3.0; // s past threshold before a flip commits (field-tuned)
     this.holdFrame = false; // 🔒 workshop tool: freeze flip + framebuffer tracking
     this.flipped = false; // gravity-resolved hold: false = canonical (H 270°)
     this._pendingFlipAt = null; // debounce timer start (ms)
