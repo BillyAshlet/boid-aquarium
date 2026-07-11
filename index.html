@@ -44,6 +44,15 @@
         right: 8px;
         width: 256px;
         z-index: 5;
+        /* Panel grew past the viewport: native scroll on the holder.
+           touch-action must override the body's `none` or mobile
+           touch-scroll dies; pan-y still lets sliders capture drags. */
+        max-height: calc(100% - 16px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
       }
       .param-btn {
         cursor: pointer;
