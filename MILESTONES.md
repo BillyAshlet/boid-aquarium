@@ -27,11 +27,13 @@ permission, and watch a gravity arrow track the phone's tilt in a lit, empty tan
 **Playable state:** a school of fish lives in the tank. You can't touch them
 yet, but you can watch them forever — and tune them with sliders.
 
-- [ ] Boids: separation / alignment / cohesion (placeholder capsule fish)
-- [ ] Obstacle avoidance via forward ray (walls + posts, no special-casing)
-- [ ] 5DOF: roll locked, pitch clamped, turn speed capped
-- [ ] Perception-radius + steering-force visualizers, toggleable
-- [ ] All params on the panel; first saved preset in `presets/`
+- [x] Boids: separation / alignment / cohesion (placeholder capsule fish, InstancedMesh)
+- [x] Obstacle avoidance via forward ray (walls now; generic — posts/rings join in M2 with no new fish code)
+- [x] 5DOF: roll locked, pitch clamped, turn speed capped
+- [x] Perception-radius + steering-force visualizers, toggleable
+- [x] All params on the panel (16, with zoom/reset)
+- [ ] Phone check: 60 fps with tilt running; school feels alive
+- [ ] Tuning session → first saved preset `presets/m1-boids-baseline.json`
 
 ## M2 — The Toy, Half of It 圈与重力
 **Playable state:** rings drift and tumble as you tilt the phone. You can land

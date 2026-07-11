@@ -1,6 +1,7 @@
 import { World } from './world.js';
 import { createScene } from './scene.js';
 import { MotionInput, mountEnableButton } from './input.js';
+import { Flock } from './boids.js';
 import { createDebug } from './debug.js';
 
 const world = new World();
@@ -13,7 +14,12 @@ const presentation = createScene(
 );
 const { renderer, scene, camera } = presentation;
 mountEnableButton(input);
-const debug = createDebug({ world, scene, input, presentation });
+const flock = new Flock(world, scene);
+const debug = createDebug({ world, scene, input, presentation, flock });
+
+// Debug handle for console poking and automated verification — reads
+// real state instead of scraping the panel UI. Not part of the game.
+window.aquarium = { world, input, presentation, flock };
 
 // The whole game, one frame at a time: senses → physics → picture → window.
 renderer.setAnimationLoop((nowMs) => {

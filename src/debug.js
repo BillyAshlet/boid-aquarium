@@ -2,11 +2,12 @@ import * as THREE from 'three';
 import { Pane } from 'tweakpane';
 import { GRAVITY } from './world.js';
 import { screenAngle } from './input.js';
+import { BOID_PARAMS } from './boids.js';
 
 // The window into the machine: Tweakpane panel, always-on FPS counter,
 // and visualizers. Every invisible force in this game eventually gets a
 // drawable form here.
-export function createDebug({ world, scene, input, presentation }) {
+export function createDebug({ world, scene, input, presentation, flock }) {
   // Mounted inside #app (via panel-holder) so it rotates with the game.
   const pane = new Pane({
     title: 'the boid 水族馆',
@@ -157,9 +158,64 @@ export function createDebug({ world, scene, input, presentation }) {
     label: 'screen',
   });
 
-  const view = { gravityArrow: true };
+  const boidsFolder = pane.addFolder({ title: 'boids 鱼群', expanded: false });
+  addParam(boidsFolder, BOID_PARAMS, 'fishCount', {
+    min: 1,
+    max: 200,
+    step: 1,
+    hardMin: 1,
+    hardMax: 500,
+  }).on('change', (ev) => {
+    if (ev.last) flock.setCount(ev.value); // rebuild once, on release
+  });
+  addParam(boidsFolder, BOID_PARAMS, 'cruiseSpeed', { min: 0.02, max: 0.6, step: 0.01, hardMin: 0.01 });
+  addParam(boidsFolder, BOID_PARAMS, 'maxSpeed', { min: 0.05, max: 0.8, step: 0.01, hardMin: 0.01 });
+  addParam(boidsFolder, BOID_PARAMS, 'maxForce', { min: 0.05, max: 3, step: 0.05, hardMin: 0.01 });
+  addParam(boidsFolder, BOID_PARAMS, 'separationRadius', { min: 0.01, max: 0.3, step: 0.005, hardMin: 0 });
+  addParam(boidsFolder, BOID_PARAMS, 'separationWeight', { min: 0, max: 5, step: 0.05, hardMin: 0 });
+  addParam(boidsFolder, BOID_PARAMS, 'alignmentRadius', { min: 0.02, max: 0.6, step: 0.01, hardMin: 0 });
+  addParam(boidsFolder, BOID_PARAMS, 'alignmentWeight', { min: 0, max: 5, step: 0.05, hardMin: 0 });
+  addParam(boidsFolder, BOID_PARAMS, 'cohesionRadius', { min: 0.05, max: 0.8, step: 0.01, hardMin: 0 });
+  addParam(boidsFolder, BOID_PARAMS, 'cohesionWeight', { min: 0, max: 5, step: 0.05, hardMin: 0 });
+  addParam(boidsFolder, BOID_PARAMS, 'detectionLength', { min: 0.02, max: 0.5, step: 0.01, hardMin: 0.01 });
+  addParam(boidsFolder, BOID_PARAMS, 'avoidanceWeight', { min: 0, max: 8, step: 0.1, hardMin: 0 });
+  addParam(boidsFolder, BOID_PARAMS, 'angleStep', { min: 5, max: 45, step: 1, hardMin: 1, hardMax: 90 });
+  addParam(boidsFolder, BOID_PARAMS, 'maxPitch', { min: 0, max: 80, step: 1, hardMin: 0, hardMax: 89 });
+  addParam(boidsFolder, BOID_PARAMS, 'turnSpeed', { min: 0.2, max: 10, step: 0.1, hardMin: 0.05 });
+
+  const view = { gravityArrow: true, perceptionRadii: false, steeringArrows: false };
   const viewFolder = pane.addFolder({ title: 'visualizers 可视化' });
   addParam(viewFolder, view, 'gravityArrow', { label: 'gravity arrow' });
+  addParam(viewFolder, view, 'perceptionRadii', { label: 'perception radii' });
+  addParam(viewFolder, view, 'steeringArrows', { label: 'steering arrows' });
+
+  // Perception radii: three wireframe spheres around fish[0]. Numbers
+  // are meaningless; wrapped around a swimming fish they're legible.
+  const radiiGroup = new THREE.Group();
+  const radiusSpheres = ['#ff9d9d', '#9dc9ff', '#a8ff9d'].map((color) => {
+    const s = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 16, 12),
+      new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.15 })
+    );
+    radiiGroup.add(s);
+    return s;
+  });
+  radiiGroup.visible = false;
+  scene.add(radiiGroup);
+
+  // Steering arrows: one LineSegments buffer, two verts per fish.
+  const FORCE_SCALE = 0.15;
+  const maxFish = 500;
+  const linePositions = new Float32Array(maxFish * 6);
+  const lineGeo = new THREE.BufferGeometry();
+  lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+  const forceLines = new THREE.LineSegments(
+    lineGeo,
+    new THREE.LineBasicMaterial({ color: '#ffb347' })
+  );
+  forceLines.frustumCulled = false;
+  forceLines.visible = false;
+  scene.add(forceLines);
 
   pane
     .addButton({ title: 'reset all ↺' })
@@ -175,6 +231,31 @@ export function createDebug({ world, scene, input, presentation }) {
   function update(nowMs) {
     const g = world.gravity;
     arrow.visible = view.gravityArrow;
+
+    radiiGroup.visible = view.perceptionRadii;
+    if (view.perceptionRadii && flock.positions.length > 0) {
+      radiiGroup.position.copy(flock.positions[0]);
+      radiusSpheres[0].scale.setScalar(Math.max(BOID_PARAMS.separationRadius, 1e-4));
+      radiusSpheres[1].scale.setScalar(Math.max(BOID_PARAMS.alignmentRadius, 1e-4));
+      radiusSpheres[2].scale.setScalar(Math.max(BOID_PARAMS.cohesionRadius, 1e-4));
+    }
+
+    forceLines.visible = view.steeringArrows;
+    if (view.steeringArrows) {
+      const n = Math.min(flock.positions.length, maxFish);
+      for (let i = 0; i < n; i++) {
+        const p = flock.positions[i];
+        const f = flock.forces[i];
+        linePositions[i * 6] = p.x;
+        linePositions[i * 6 + 1] = p.y;
+        linePositions[i * 6 + 2] = p.z;
+        linePositions[i * 6 + 3] = p.x + f.x * FORCE_SCALE;
+        linePositions[i * 6 + 4] = p.y + f.y * FORCE_SCALE;
+        linePositions[i * 6 + 5] = p.z + f.z * FORCE_SCALE;
+      }
+      lineGeo.setDrawRange(0, n * 2);
+      lineGeo.attributes.position.needsUpdate = true;
+    }
     if (g.lengthSq() > 1e-6) arrow.setDirection(g.clone().normalize());
     arrow.setLength(0.35 * (g.length() / GRAVITY), 0.06, 0.03);
     monitors.gravity = `x ${g.x.toFixed(2)}  y ${g.y.toFixed(2)}  z ${g.z.toFixed(2)}`;

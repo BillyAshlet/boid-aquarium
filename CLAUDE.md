@@ -168,6 +168,17 @@ This file is the engineering source of truth; if they conflict, this file wins.
   in `presets/m0-input-baseline.json`; flipDelay slider max widened to
   5 (tuned value sat at the old edge). Per-axis tilt-gain observation
   recorded under Open questions, deferred to M2.
-- **Next up:** M1 — Life 鱼群. Boids in the tank (see MILESTONES.md):
-  separation/alignment/cohesion, obstacle avoidance via forward ray,
-  5DOF (roll locked), perception visualizers, all params via addParam.
+- **2026-07-06 — M1 built (desktop-verified).** boids.js: Reynolds
+  flock as the first `world.systems` citizen — separation/alignment/
+  cohesion + forward-ray wall avoidance (yaw sweep, pitch fallback,
+  generic for M2 obstacles) + speed keeper; 5DOF integration (turn-speed
+  cap, pitch clamp, roll locked via world-up basis); InstancedMesh
+  capsules. 16 params via addParam (fishCount rebuilds on slider
+  release). Visualizers: perception-radius spheres on fish[0], steering
+  lines for all fish. `window.aquarium` debug handle added in main.js —
+  automated verification reads real state now, not the panel DOM.
+  Verified: 80 fish school (mean nearest-neighbor 0.055 ≈ just under
+  separation radius), zero escapes/NaN at 80 and 200 fish, 60 fps both.
+- **Next up:** Billy watches the school on the phone (fps check with
+  tilt running), then a tuning session → bottle
+  `presets/m1-boids-baseline.json` and close M1. Then M2: rings + tilt.
