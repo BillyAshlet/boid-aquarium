@@ -44,6 +44,9 @@ a ring on a post using tilt alone. This is already the toy — before any water.
 - [ ] Success snap: distance + angle thresholds → settle animation
 - [ ] Visual-only impact wobble (damped oscillator, subtle)
 - [ ] Two posts placed; fish avoid rings like any obstacle
+- [ ] Fish orient to gravity (up-vector swap): the school re-levels its swim plane under tilt — judge together with ring drift
+- [ ] Surface-affinity prototype (posts-only): weak attraction opposing avoidance → contour-following; keep if it delights, shelve if invisible
+- [ ] Judge the parked per-axis tilt-gain question with rings as the instrument
 
 ## M3 — Water, Faked 假水
 **Playable state:** the full game loop. Press-and-hold to charge, release to
@@ -51,11 +54,23 @@ fire, rings ride the jet, fish scatter and regroup. Water is an analytic fake �
 if this milestone already feels mesmerizing, that's a fine place to live.
 
 - [ ] `FluidField` interface: `sampleVelocity(pos)`, `addJet(origin, dir, strength)`
+- [ ] Cursor current — desktop's primary interaction: pointer injects a gentle moving current via FluidField (the interface's first test-driver; build BEFORE the jets)
 - [ ] Fake field: jet cone with spread, decay, crude wall reflection
-- [ ] Charge mechanic: non-linear buildup, release fires, decay lingers
-- [ ] Touch zones: full left/right screen halves
+- [ ] Charge mechanic: non-linear buildup, release fires, decay lingers (mobile only — desktop has no jets by design)
+- [ ] Touch zones: full left/right screen halves (mobile only)
 - [ ] Rings take force + torque from the field; fish take scatter forces
 - [ ] Velocity-field arrow visualizer (the fluid is invisible — this is how we see it)
+
+## M3.5 — Look Development 视觉定调
+**Playable state:** the same game, but it looks *decided* — art direction
+chosen and proven affordable BEFORE M4 locks the performance budget
+(DoF and grain cost GPU; M4 must optimize against the true final load).
+
+- [ ] Background color decided in-scene (`#071e3d` vs `#081828` vs warmer)
+- [ ] Tank framing + proportions finalized (depth judged with rings and water live)
+- [ ] Fish silhouette direction chosen (informs M5 Blender work)
+- [ ] DoF + grain feasibility tested ON THE PHONE at target fps
+- [ ] Desktop framing tone decided: "shelf aquarium" frame vs full-bleed (one design language regardless)
 
 ## M4 — Water, Real 真水
 **Playable state:** same game, but the water is alive — jets bounce off walls
@@ -74,10 +89,17 @@ from a design annual.
 - [ ] Orbit force at `orbit_trigger` placement ratio
 - [ ] Quiet celebration state (no text, no fanfare — the world just shifts)
 - [ ] Blender assets: fish, rings, posts, tank → GLB (silhouette-first, low-poly)
-- [ ] Cel/flat shading, outlines, depth of field, paper-grain overlay
-- [ ] Background color decided in-scene (`#071e3d` vs `#081828` vs warmer)
+- [ ] Cel/flat shading, outlines, depth of field, paper-grain overlay (final implementation of what M3.5 proved feasible)
 - [ ] Shake impulses via `acceleration` — feel test, keep only if it delights
 - [ ] Sound decision: silence vs minimal ambient water (no UI sounds either way)
+
+## M6 — The Shelf Aquarium 架上水族馆 *(stretch — post-summer, no dates, no commitment)*
+Desktop-only expansion of "the world": droppable objects (rocks,
+driftwood — settling rigid bodies, irregular-geometry collision for
+rings and fish), surface affinity generalized beyond posts, exhibition
+layouts. Parked ideas live here too: first-person fish view (camera
+bound to one boid). **Gate: nothing in M6 may queue ahead of the
+M1–M5 core game.** This section is a named parking spot, not a plan.
 
 ---
 

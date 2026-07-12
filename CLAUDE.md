@@ -11,6 +11,25 @@ This file is the engineering source of truth; if they conflict, this file wins.
 
 ## Locked decisions 已定决策
 
+- **Core technology must remain migratable（核心技术可迁移）— revised M1.**
+  The tank you see today is not the tank at M5, and M5's is not M6's.
+  Boid rules, the FluidField interface, ring 6DOF physics,
+  gravity/frame handling, and input abstraction must survive complete
+  visual and layout redesigns — a different tank shape, a vertical
+  column, a hexagonal panel arrangement, an exhibition layout. No core
+  algorithm may hardcode the current tank box, camera, or art. This is
+  the criterion for whether the architecture is doing its job.
+- **Mobile = the game; desktop = the world（手机是游戏，桌面是世界）—
+  revised M1, supersedes "desktop = simplified fallback."** The
+  ring-toss game is fundamentally coupled to tilt gravity — the toy is
+  *about* controlling a shifting horizon with your hands. Ported to
+  constant-gravity desktop it becomes a worse mobile game, not a
+  parallel experience. So desktop gets NO jets, NO rings, NO completion
+  condition, by design: it is an inhabitable aquarium — constant,
+  weighty gravity (a tank sitting on a shelf), fish schooling, cursor
+  as a gentle current (desktop's primary interaction, M3), quiet
+  TDC-magazine-object ambience. Mobile keeps the complete toy,
+  undiluted. Mobile remains the performance budget.
 - **Two posts only.** Challenge comes from physics, not layout.
 - **Fixed camera, world tilts.** Device gravity vector rotates the in-world
   gravity; the tank stays fixed on screen. No orbit camera.
@@ -24,6 +43,21 @@ This file is the engineering source of truth; if they conflict, this file wins.
 - **Rings: rigid 6DOF bodies + visual-only wobble.** No mass-spring physics.
   Impact drives a damped-oscillator deformation in the shader/mesh only.
 - **Fish: 5DOF** (translation + yaw + pitch). Roll locked — always upright.
+- **Fish orient to gravity, not canonical up (M2).** The 5DOF basis and
+  pitch clamp swap hardcoded +Y for smoothed −gravity, so the school
+  re-levels its swim plane when the world tilts. Orientation only —
+  never a sinking force ("swimmers, not sinkers"). Optional
+  `gravityBias` steering weight parked as fallback if pure re-leveling
+  feels too subtle.
+- **Pointer touches the world only through FluidField.** The cursor
+  current (desktop's primary interaction) is a moving source term in
+  the field — never a direct force on fish or rings. Lands early M3 as
+  the FluidField interface's first test-driver.
+- **Fish-around-geometry, split three ways (M1 design review):**
+  point orbit = M5, a plain function of a point, no attractor
+  framework; surface affinity = weak attraction toward nearby
+  colliders opposing avoidance → emergent contour-following, prototyped
+  M2 posts-only; field influence = the cursor current above.
 - **Vanilla JS + Three.js. No framework. Vite is a dev server only.**
 - **Desktop = simplified fallback** (fixed gravity, mouse/keys). Mobile is
   the real game and the performance budget.
@@ -82,6 +116,25 @@ This file is the engineering source of truth; if they conflict, this file wins.
   all". Presets export/import as JSON in `presets/`.
 - **Language:** English primary, Chinese annotations where they help. 主英文辅中文。
 
+## Documentation 文档
+
+- **Repo = engineering truth** (CLAUDE.md, MILESTONES.md, DEVLOG.md).
+  Git history is the revision record — no inline revision-mark or
+  color-annotation system (evaluated and rejected 2026-07-12: it
+  pollutes the files their primary consumers read and duplicates git
+  blame). When a locked decision is materially revised, append
+  "— revised M\<n\>" to its bullet; that's the whole convention.
+- **DEVLOG.md** is the chronological narrative: one short entry per
+  work session (what / why / what we learned), written at session end.
+  It is the raw material for any future write-up (portfolio, blog,
+  grad-school essay) — richer than commits, queryable unlike chat.
+- **Notion = design intent** (Core Concept, Logic, vision). Read-only
+  from the repo's perspective; updated only when design philosophy
+  actually changes. Engineering docs are never mirrored (manual
+  duplication = drift). At each milestone close, a short digest
+  generated from DEVLOG can be pushed to Notion on request
+  ("sync notion") — one-directional, generated, no hand-syncing.
+
 ## Workflow rules 工作方式
 
 - Billy is a self-taught creative coder — explain structural decisions in
@@ -91,9 +144,10 @@ This file is the engineering source of truth; if they conflict, this file wins.
 - Infrastructure code (textbook stuff) can land in big chunks; anything
   touching **feel or coupling** moves in small, individually observable steps.
 - Build visualizers as a reflex: every force should be drawable.
-- At session end: update "Current state" below, then commit.
-  Every entry is dated (YYYY-MM-DD) — the file should tell you *when*
-  things happened, not just what.
+- At session end: update "Current state" below, add a DEVLOG.md entry
+  (a few sentences: what / why / learned), then commit. Every entry is
+  dated (YYYY-MM-DD) — the docs should tell you *when* things
+  happened, not just what.
 
 ## Open questions 待决
 
@@ -107,6 +161,18 @@ This file is the engineering source of truth; if they conflict, this file wins.
   Also check before building anything: 3D perspective foreshortening of
   the arrow may exaggerate the perception. **Do not act until rings
   drift under tilt in M2** — an arrow alone can't judge gameplay impact.
+- **Mobile poke-vs-charge（M3）:** does touch-repulsion exist on mobile
+  (moving drag = poke vs stationary hold = charge), or does it stay
+  desktop-only? Tap already means "gentle pulse" in the charge design —
+  don't muddy it. Decide with the jet working.
+- **Desktop framing tone（M3.5）:** one design language regardless, but
+  desktop may get "aquarium on a shelf" framing (visible frame,
+  letterbox, furniture) vs mobile full-bleed. Discuss at look
+  development.
+- **First-person fish view（M6 stretch）:** camera bound to one boid,
+  swimming with it — cheap (a camera attachment), philosophically
+  aligned (inhabit an agent driven by simple rules, no scripted camera
+  choreography). Parked, not scheduled.
 
 ## Current state 当前状态
 
@@ -179,6 +245,17 @@ This file is the engineering source of truth; if they conflict, this file wins.
   automated verification reads real state now, not the panel DOM.
   Verified: 80 fish school (mean nearest-neighbor 0.055 ≈ just under
   separation radius), zero escapes/NaN at 80 and 200 fish, 60 fps both.
-- **Next up:** Billy watches the school on the phone (fps check with
-  tilt running), then a tuning session → bottle
-  `presets/m1-boids-baseline.json` and close M1. Then M2: rings + tilt.
+- **2026-07-12 — M1 design review recorded.** Product reframe:
+  mobile = the game, desktop = the world (no jets/rings/win state on
+  desktop — inhabitable aquarium, cursor current as primary
+  interaction). New top principle: migratable core. Ratified: gravity
+  up-vector swap (M2), cursor current via FluidField (early M3),
+  C-split (orbit M5 / surface affinity M2 / field influence M3).
+  Inserted M3.5 look development; added M6 stretch (shelf aquarium;
+  first-person fish view parked). DEVLOG.md created + backfilled;
+  doc policy recorded (repo = engineering truth, Notion = design
+  intent, no mirroring; inline revision-color annotations rejected in
+  favor of git + "revised M<n>" tags). Panel scroll re-verified live.
+- **Next up:** Billy's M1 tuning session — opener: TANK.depth
+  experiment (0.5 → ~0.35–0.4), then radii → weights → turn feel →
+  bottle `presets/m1-boids-baseline.json` and close M1. Then M2.
