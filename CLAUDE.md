@@ -31,6 +31,26 @@ This file is the engineering source of truth; if they conflict, this file wins.
   TDC-magazine-object ambience. Mobile keeps the complete toy,
   undiluted. Mobile remains the performance budget.
 - **Two posts only.** Challenge comes from physics, not layout.
+- **The order/chaos edge is the aesthetic thesis（秩序与混沌的边界）—
+  recorded M1.** The target regime for every dynamic system in this
+  project: regular enough that you sense pattern, irregular enough
+  that you can't describe it in one or two sentences. Fixed orbits are
+  dead (field-verified: pure central containment settles into
+  describable loops); noise is worse. "简单规则，复杂系统" means
+  complexity *living at this edge*, not just complexity. Use it as the
+  acceptance test for tuning: if you can summarize the motion in a
+  sentence, it's too ordered; if you can't sense coordination, too wild.
+- **Tank dimensions are platform-specific — decided 2026-07-15,
+  implement before M2.** Mobile keeps the toy scale (1.2 × 0.8 × 0.5 —
+  the original is small for a reason); desktop gets aquarium scale
+  (~2.0 × 1.2 × 0.8 as the starting guess) — space to inhabit, and the
+  direct experiment for the multi-gyre target (space is the suspected
+  constraint). The meters/origin/+Y convention stays universal; only
+  the numbers diverge. Must land before M2 so ring/post physics is
+  born tank-relative. Consequences accepted: presets become
+  platform-scoped (name them `m-*` / `d-*`; preset JSON should record
+  the tank it was tuned in), and radius params tuned on one platform
+  won't transfer verbatim — that's inherent, not a bug.
 - **Fixed camera, world tilts.** Device gravity vector rotates the in-world
   gravity; the tank stays fixed on screen. No orbit camera.
 - **Gravity = `accelerationIncludingGravity`** mapped to world down. Rotation
@@ -139,6 +159,26 @@ This file is the engineering source of truth; if they conflict, this file wins.
 
 - Billy is a self-taught creative coder — explain structural decisions in
   plain language at decision points; keep the module map stable.
+- **Desktop tunes, phone verifies（桌面调，手机验）— recorded M1.**
+  Phone sliders are miserable and desktop can't judge tilt feel, so the
+  loop is: tune on desktop → copy preset JSON → paste-apply on phone →
+  feel. Never attempt precision tuning on the phone again.
+- **Coupled-parameter tuning order: by radius of influence, smallest
+  last-to-first; amplifiers before behaviors.** (1) Clamps/caps first —
+  maxForce, maxSpeed, turnSpeed — they're the amplifier every weight is
+  heard through; weights tuned against a saturated clamp are lies.
+  (2) Solo behaviors (speed keeper, wall avoidance). (3) Local pairwise
+  (separation). (4) Collective (alignment, cohesion — the
+  macro-structure engine). (5) Global fields LAST (centeringWeight has
+  no radius = infinite radius = couples to everything; zero it while
+  tuning locals, reintroduce at the end). One knob per pass; watch ≥30 s
+  per change — the gyre period is long and slider-sweeping reads
+  transients, not equilibria. Bottle every keeper preset BEFORE
+  touching an amplifier.
+- **localStorage presets are scratch, not archive.** Anything you'd
+  mourn gets exported and committed to `presets/` in the same session
+  you find it — clearing site data (or a browser update) wipes the
+  scratchpad silently.
 - One system per session. Every session ends with a visible change on screen.
 - Commit every working state. Before risky changes, commit first.
 - Infrastructure code (textbook stuff) can land in big chunks; anything
@@ -169,6 +209,20 @@ This file is the engineering source of truth; if they conflict, this file wins.
   desktop may get "aquarium on a shelf" framing (visible frame,
   letterbox, furniture) vs mobile full-bleed. Discuss at look
   development.
+- **Möbius / multi-gyre target（parked aesthetic, M1）:** a school
+  whose flow curves through itself, folds back, has no stable
+  front/back — multiple interpenetrating gyres, not one wave.
+  Suspected space-constrained at toy-tank scale (500 fish + alignment
+  radius 0.106 saturate the volume into one unified flow). Two
+  candidate paths, in order: the desktop aquarium-scale tank (direct
+  space experiment), and M2 posts breaking the symmetry (the measured
+  low global polarization of the single gyre says the school is
+  locally aligned but globally circulating — the regime where
+  obstacles can pin counter-rotating lobes). If it proves impossible
+  without space, record that: it's a finding, not a failure.
+  Observation for the record (Billy, M1): separation is anti-collision;
+  **alignment + cohesion are the macro-structure engine** — macro
+  reorganization comes from those two.
 - **First-person fish view（M6 stretch）:** camera bound to one boid,
   swimming with it — cheap (a camera attachment), philosophically
   aligned (inhabit an agent driven by simple rules, no scripted camera
@@ -273,9 +327,22 @@ This file is the engineering source of truth; if they conflict, this file wins.
   re-weights direction, not magnitude). Perf: symmetric flat-typed-
   array pair pass — 500: 2.37→1.08 ms, 1000: 9.23→3.59 ms; grid
   deferred until radii shrink. `window.aquarium` exposes BOID_PARAMS.
-- **Next up:** Billy's live retune on the phone — drop `maxForce` from
-  5.2 and re-listen to everything (relationships, not prescribed
-  numbers: keep maxSpeed ≈ 2× cruise; weights re-balance once the
-  clamp is audible). Optional sepFalloff A/B by feel. Then bottle the
-  post-retune baseline and close M1. Parked: multi-wave question
-  (smaller alignmentRadius vs M2 posts breaking the symmetry).
+- **2026-07-15 (later) — M1 deep-observation decisions recorded.**
+  Pipeline confirmed (desktop tunes, phone verifies — now a workflow
+  rule). Decided: platform-specific tank dimensions (before M2);
+  M1 preserved by TAG not branch — `m1-standing-wave` tagged on the
+  tooling commit, final `m1-close` tag at milestone close (plus a
+  built static bundle then, so the artifact runs without the
+  toolchain; `?m1` pure-flock query flag noted as an M2-era
+  convenience). Coupled-parameter tuning order recorded as a workflow
+  rule (amplifiers first, global fields last). Order/chaos edge
+  recorded as the project's aesthetic thesis. Möbius/multi-gyre
+  recorded as parked target. Billy keeps exploring M1 — no rush to
+  close.
+- **Next up (build):** platform-specific tank — TANK selected by
+  platform at boot, dims live-tunable on the panel (shell rebuild +
+  camera reframe on change) as the multi-gyre space experiment; preset
+  JSON gains a tuned-in-tank note. Then Billy: bottle keepers
+  (`m1-crowded-1000` etc.) → drop maxForce per the tuning-order rule →
+  rebuild weights → bottle post-retune baseline → close M1
+  (`m1-close` tag + built bundle). Then M2.

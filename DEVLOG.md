@@ -107,3 +107,24 @@ the described behavior was worth building a knob for. And: bottle the
 checkpoint *before* the session that might improve on it; the tool
 that preserves an aesthetic has to exist before the retune that
 endangers it.
+
+## 2026-07-15 (later) — The observation report that named the thesis
+Billy's deep-observation pass after real phone+desktop use. The
+milestone's biggest outputs turned out to be conceptual: (1) the
+**order/chaos edge** named as the project's aesthetic thesis —
+"regular enough to sense pattern, irregular enough to defy a
+one-sentence description" — with pure central containment
+field-verified as the dead-regular end of the spectrum; (2) the
+**Möbius/multi-gyre target** recorded, with the realization that the
+tank-size question and the multi-gyre question are the same question
+(space is the suspected constraint); (3) separation demoted to
+anti-collision, alignment+cohesion recognized as the macro-structure
+engine. Decisions: tank dimensions go platform-specific before M2;
+M1 is preserved by tag (m1-standing-wave now, m1-close + built bundle
+at close) — a branch invites drift in a thing meant to be immutable;
+coupled parameters get a tuning ORDER (amplifiers → solo → local →
+collective → global fields last), not just intuition.
+**Learned:** Billy's aesthetic vocabulary is outrunning the parameter
+vocabulary — "folds back through itself" has no knob. When that
+happens the missing parameter is usually structural (space, obstacles,
+boundary shape), not another weight.
