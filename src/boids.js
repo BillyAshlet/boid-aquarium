@@ -7,22 +7,26 @@ import { TANK } from './world.js';
 // everything the school appears to "decide" emerges from these weights.
 // 简单规则，复杂系统。
 
+// Defaults = Billy's M1 "standing wave" checkpoint (2026-07-15): 500 fish
+// forming one large coherent gyre cycling through the tank. Field-tuned
+// on iPhone; bottled in presets/m1-standing-wave.json; ↺ returns here.
+// maxForce 5.2 is deliberately untouched — it is the live-retune target.
 export const BOID_PARAMS = {
-  fishCount: 80,
-  cruiseSpeed: 0.18, // m/s — preferred swimming speed
-  maxSpeed: 0.3, // m/s — hard ceiling
-  maxForce: 0.8, // m/s² — steering clamp per rule
-  separationRadius: 0.08, // personal space
-  separationWeight: 1.5,
-  alignmentRadius: 0.18, // conformity neighborhood
-  alignmentWeight: 1.0,
+  fishCount: 500,
+  cruiseSpeed: 0.23, // m/s — preferred swimming speed
+  maxSpeed: 0.46, // m/s — hard ceiling (~2× cruise so fish can actually reach it)
+  maxForce: 5.2, // m/s² — steering clamp per rule
+  separationRadius: 0.12, // personal space
+  separationWeight: 0.55,
+  alignmentRadius: 0.106, // conformity neighborhood
+  alignmentWeight: 0.45,
   cohesionRadius: 0.3, // belonging neighborhood
-  cohesionWeight: 0.8,
-  detectionLength: 0.18, // forward ray length
-  avoidanceWeight: 2.5,
-  angleStep: 15, // degrees per rotation attempt when the ray hits
-  maxPitch: 40, // degrees — fish never swim like submarines
-  turnSpeed: 3.0, // rad/s — heading change cap; makes turns read as swimming
+  cohesionWeight: 0.4,
+  detectionLength: 0.23, // forward ray length
+  avoidanceWeight: 1.0,
+  angleStep: 18, // degrees per rotation attempt when the ray hits
+  maxPitch: 57, // degrees — fish never swim like submarines
+  turnSpeed: 2.8, // rad/s — heading change cap; makes turns read as swimming
 };
 
 // Fish keep this far off the glass — the avoidance ray tests against

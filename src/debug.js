@@ -3,6 +3,7 @@ import { Pane } from 'tweakpane';
 import { GRAVITY } from './world.js';
 import { screenAngle } from './input.js';
 import { BOID_PARAMS } from './boids.js';
+import m1StandingWave from '../presets/m1-standing-wave.json';
 
 // The window into the machine: Tweakpane panel, always-on FPS counter,
 // and visualizers. Every invisible force in this game eventually gets a
@@ -15,6 +16,7 @@ export function createDebug({ world, scene, input, presentation, flock }) {
   });
 
   const resets = [];
+  const registry = []; // every param, so preset-apply can refresh/widen it
 
   // Every tunable registers through here and carries: live value,
   // explicit range, its default (the value at registration), a ↺ reset,
@@ -97,9 +99,25 @@ export function createDebug({ world, scene, input, presentation, flock }) {
       }
     }
 
+    // After a preset writes obj[key] directly: repaint the control, and
+    // if the new value sits outside the slider's current window, widen
+    // the window to include it (never silently clamp a loaded preset).
+    function ensureVisible() {
+      const v = obj[key];
+      if (isNumeric && (v < state.min || v > state.max)) {
+        state.min = nice(Math.min(state.min, v));
+        state.max = nice(Math.max(state.max, v));
+        state.step = niceStep(state.max - state.min);
+        rebuild();
+      } else {
+        binding.refresh();
+      }
+    }
+
     binding = folder.addBinding(obj, key, tpOpts);
     decorate();
     resets.push(resetParam);
+    registry.push({ ensureVisible });
     return binding;
   }
 
@@ -161,16 +179,16 @@ export function createDebug({ world, scene, input, presentation, flock }) {
   const boidsFolder = pane.addFolder({ title: 'boids 鱼群', expanded: false });
   addParam(boidsFolder, BOID_PARAMS, 'fishCount', {
     min: 1,
-    max: 200,
+    max: 1000, // dense-school exploration headroom (was 200/500)
     step: 1,
     hardMin: 1,
-    hardMax: 500,
+    hardMax: 1000,
   }).on('change', (ev) => {
     if (ev.last) flock.setCount(ev.value); // rebuild once, on release
   });
   addParam(boidsFolder, BOID_PARAMS, 'cruiseSpeed', { min: 0.02, max: 0.6, step: 0.01, hardMin: 0.01 });
   addParam(boidsFolder, BOID_PARAMS, 'maxSpeed', { min: 0.05, max: 0.8, step: 0.01, hardMin: 0.01 });
-  addParam(boidsFolder, BOID_PARAMS, 'maxForce', { min: 0.05, max: 3, step: 0.05, hardMin: 0.01 });
+  addParam(boidsFolder, BOID_PARAMS, 'maxForce', { min: 0.05, max: 8, step: 0.05, hardMin: 0.01 });
   addParam(boidsFolder, BOID_PARAMS, 'separationRadius', { min: 0.01, max: 0.3, step: 0.005, hardMin: 0 });
   addParam(boidsFolder, BOID_PARAMS, 'separationWeight', { min: 0, max: 5, step: 0.05, hardMin: 0 });
   addParam(boidsFolder, BOID_PARAMS, 'alignmentRadius', { min: 0.02, max: 0.6, step: 0.01, hardMin: 0 });
@@ -182,6 +200,138 @@ export function createDebug({ world, scene, input, presentation, flock }) {
   addParam(boidsFolder, BOID_PARAMS, 'angleStep', { min: 5, max: 45, step: 1, hardMin: 1, hardMax: 90 });
   addParam(boidsFolder, BOID_PARAMS, 'maxPitch', { min: 0, max: 80, step: 1, hardMin: 0, hardMax: 89 });
   addParam(boidsFolder, BOID_PARAMS, 'turnSpeed', { min: 0.2, max: 10, step: 0.1, hardMin: 0.05 });
+
+  // --- Presets 预设: the tuning workflow's memory ---
+  // Desktop tunes (precise sliders, rapid A/B), the phone feels (real
+  // gravity) — the bridge is one compact JSON line: copy here, paste
+  // there, apply. localStorage is the per-browser scratchpad of
+  // works-in-progress; presets/*.json in the repo (★ built-ins) is the
+  // committed archive of locked aesthetic decisions. Presets cover
+  // BOID_PARAMS only — input tuning (One Euro etc.) is per-device by
+  // design and keeps its own baseline preset.
+  const LS_KEY = 'boid-aquarium.presets.v1';
+  const builtins = { [m1StandingWave.name]: m1StandingWave.params };
+  const readStore = () => {
+    try {
+      return JSON.parse(localStorage.getItem(LS_KEY)) || {};
+    } catch {
+      return {};
+    }
+  };
+  const writeStore = (s) => localStorage.setItem(LS_KEY, JSON.stringify(s));
+
+  const presetUI = { name: '', saved: '★' + m1StandingWave.name, paste: '', status: '' };
+  const presetFolder = pane.addFolder({ title: 'presets 预设', expanded: false });
+  presetFolder.addBinding(presetUI, 'name', { label: 'name' });
+
+  function applyParams(params, sourceLabel) {
+    let applied = 0;
+    const skipped = [];
+    for (const [k, v] of Object.entries(params)) {
+      if (k in BOID_PARAMS && typeof v === typeof BOID_PARAMS[k]) {
+        BOID_PARAMS[k] = v;
+        applied++;
+      } else {
+        skipped.push(k);
+      }
+    }
+    // setCount both rebuilds the school and normalizes fishCount; the
+    // slider's own change handler only fires on user input, not here.
+    flock.setCount(BOID_PARAMS.fishCount);
+    for (const r of registry) r.ensureVisible();
+    presetUI.status =
+      `${sourceLabel}: ${applied} params` +
+      (skipped.length ? ` · ignored ${skipped.join(', ')}` : '');
+  }
+
+  let savedList = null;
+  function rebuildList() {
+    const options = [
+      ...Object.keys(builtins).map((k) => ({ text: `★ ${k}`, value: '★' + k })),
+      ...Object.keys(readStore()).map((k) => ({ text: k, value: k })),
+    ];
+    if (!options.some((o) => o.value === presetUI.saved)) presetUI.saved = options[0].value;
+    const index = savedList ? presetFolder.children.indexOf(savedList) : undefined;
+    if (savedList) savedList.dispose();
+    savedList = presetFolder.addBlade({
+      view: 'list',
+      label: 'saved',
+      options,
+      value: presetUI.saved,
+      index,
+    });
+    savedList.on('change', (ev) => {
+      presetUI.saved = ev.value;
+    });
+  }
+
+  presetFolder.addButton({ title: 'save to browser 💾' }).on('click', () => {
+    const name = presetUI.name.trim();
+    if (!name) {
+      presetUI.status = 'name it first';
+      return;
+    }
+    if (builtins[name]) {
+      presetUI.status = '★ names are reserved';
+      return;
+    }
+    const store = readStore();
+    store[name] = { ...BOID_PARAMS };
+    writeStore(store);
+    presetUI.saved = name;
+    rebuildList();
+    presetUI.status = `saved "${name}"`;
+  });
+
+  rebuildList();
+
+  presetFolder.addButton({ title: 'load ▶' }).on('click', () => {
+    const params = presetUI.saved.startsWith('★')
+      ? builtins[presetUI.saved.slice(1)]
+      : readStore()[presetUI.saved];
+    if (params) applyParams(params, presetUI.saved);
+    else presetUI.status = 'preset not found';
+  });
+
+  presetFolder.addButton({ title: 'delete 🗑' }).on('click', () => {
+    if (presetUI.saved.startsWith('★')) {
+      presetUI.status = '★ built-ins live in the repo, not here';
+      return;
+    }
+    const store = readStore();
+    delete store[presetUI.saved];
+    writeStore(store);
+    rebuildList();
+    presetUI.status = 'deleted';
+  });
+
+  presetFolder.addButton({ title: 'copy to clipboard 📋' }).on('click', async () => {
+    const json = JSON.stringify({
+      _type: 'boid-preset',
+      name: presetUI.name.trim() || 'untitled',
+      date: new Date().toISOString().slice(0, 10),
+      params: { ...BOID_PARAMS },
+    });
+    presetUI.paste = json; // always mirrored — manual-copy fallback
+    pasteBinding.refresh();
+    try {
+      await navigator.clipboard.writeText(json);
+      presetUI.status = `copied (${json.length} chars)`;
+    } catch {
+      presetUI.status = 'clipboard blocked — copy from paste field';
+    }
+  });
+
+  const pasteBinding = presetFolder.addBinding(presetUI, 'paste', { label: 'paste' });
+  presetFolder.addButton({ title: 'apply pasted ▶' }).on('click', () => {
+    try {
+      const obj = JSON.parse(presetUI.paste);
+      applyParams(obj.params ?? obj, obj.name || 'pasted'); // bare param objects OK
+    } catch {
+      presetUI.status = 'not valid JSON';
+    }
+  });
+  presetFolder.addBinding(presetUI, 'status', { readonly: true, label: '·' });
 
   const view = { gravityArrow: true, perceptionRadii: false, steeringArrows: false };
   const viewFolder = pane.addFolder({ title: 'visualizers 可视化' });
@@ -205,7 +355,7 @@ export function createDebug({ world, scene, input, presentation, flock }) {
 
   // Steering arrows: one LineSegments buffer, two verts per fish.
   const FORCE_SCALE = 0.15;
-  const maxFish = 500;
+  const maxFish = 1000; // must track the fishCount hardMax
   const linePositions = new Float32Array(maxFish * 6);
   const lineGeo = new THREE.BufferGeometry();
   lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));

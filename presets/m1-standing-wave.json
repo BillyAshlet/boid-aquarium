@@ -1,0 +1,23 @@
+{
+  "_type": "boid-preset",
+  "name": "m1-standing-wave",
+  "date": "2026-07-15",
+  "note": "Billy's one-wave checkpoint: 500 fish, one large coherent gyre cycling through the tank. maxForce 5.2 deliberately unmodified (retune target). These values are also the code defaults in boids.js — ↺ returns here.",
+  "params": {
+    "fishCount": 500,
+    "cruiseSpeed": 0.23,
+    "maxSpeed": 0.46,
+    "maxForce": 5.2,
+    "separationRadius": 0.12,
+    "separationWeight": 0.55,
+    "alignmentRadius": 0.106,
+    "alignmentWeight": 0.45,
+    "cohesionRadius": 0.3,
+    "cohesionWeight": 0.4,
+    "detectionLength": 0.23,
+    "avoidanceWeight": 1.0,
+    "angleStep": 18,
+    "maxPitch": 57,
+    "turnSpeed": 2.8
+  }
+}
