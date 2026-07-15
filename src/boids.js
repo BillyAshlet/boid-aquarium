@@ -18,6 +18,12 @@ export const BOID_PARAMS = {
   maxForce: 5.2, // m/s² — steering clamp per rule
   separationRadius: 0.12, // personal space
   separationWeight: 0.55,
+  // Distance→weight shape for separation (A/B live): 'inverse' 1/d (the
+  // original), 'linear' (r−d)/r, 'invlog' ln(r/d) — flat mid-band, sharp
+  // only at close approach. NOTE: steerToward normalizes the summed
+  // vector, so shape changes how near neighbors outvote far ones in the
+  // *direction*, not the force magnitude.
+  sepFalloff: 'inverse',
   alignmentRadius: 0.106, // conformity neighborhood
   alignmentWeight: 0.45,
   cohesionRadius: 0.3, // belonging neighborhood
@@ -168,6 +174,8 @@ export class Flock {
       cohX[i] = cohY[i] = cohZ[i] = 0;
       nSep[i] = nAli[i] = nCoh[i] = 0;
     }
+    const sepR = P.separationRadius;
+    const shape = P.sepFalloff;
     const sepR2 = P.separationRadius * P.separationRadius;
     const aliR2 = P.alignmentRadius * P.alignmentRadius;
     const cohR2 = P.cohesionRadius * P.cohesionRadius;
@@ -183,8 +191,17 @@ export class Flock {
         const d2 = dx * dx + dy * dy + dz * dz;
         if (d2 >= maxR2) continue;
         if (d2 < sepR2 && d2 > 1e-12) {
-          // repulsion, stronger the closer: Δ/d² (magnitude 1/d)
-          const w = 1 / d2;
+          // contribution = Δ·w, so per-neighbor magnitude m(d) = w·d
+          let w;
+          if (shape === 'linear') {
+            const d = Math.sqrt(d2);
+            w = (sepR - d) / (sepR * d); // m = (r−d)/r
+          } else if (shape === 'invlog') {
+            const d = Math.sqrt(d2);
+            w = Math.log(sepR / d) / d; // m = ln(r/d)
+          } else {
+            w = 1 / d2; // 'inverse': m = 1/d — the original
+          }
           sepX[i] += dx * w; sepY[i] += dy * w; sepZ[i] += dz * w; nSep[i]++;
           sepX[j] -= dx * w; sepY[j] -= dy * w; sepZ[j] -= dz * w; nSep[j]++;
         }

@@ -191,6 +191,10 @@ export function createDebug({ world, scene, input, presentation, flock }) {
   addParam(boidsFolder, BOID_PARAMS, 'maxForce', { min: 0.05, max: 8, step: 0.05, hardMin: 0.01 });
   addParam(boidsFolder, BOID_PARAMS, 'separationRadius', { min: 0.01, max: 0.3, step: 0.005, hardMin: 0 });
   addParam(boidsFolder, BOID_PARAMS, 'separationWeight', { min: 0, max: 5, step: 0.05, hardMin: 0 });
+  addParam(boidsFolder, BOID_PARAMS, 'sepFalloff', {
+    label: 'sepFalloff',
+    options: { inverse: 'inverse', linear: 'linear', 'inverse-log': 'invlog' },
+  });
   addParam(boidsFolder, BOID_PARAMS, 'alignmentRadius', { min: 0.02, max: 0.6, step: 0.01, hardMin: 0 });
   addParam(boidsFolder, BOID_PARAMS, 'alignmentWeight', { min: 0, max: 5, step: 0.05, hardMin: 0 });
   addParam(boidsFolder, BOID_PARAMS, 'cohesionRadius', { min: 0.05, max: 0.8, step: 0.01, hardMin: 0 });

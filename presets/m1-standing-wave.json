@@ -10,6 +10,7 @@
     "maxForce": 5.2,
     "separationRadius": 0.12,
     "separationWeight": 0.55,
+    "sepFalloff": "inverse",
     "alignmentRadius": 0.106,
     "alignmentWeight": 0.45,
     "cohesionRadius": 0.3,
