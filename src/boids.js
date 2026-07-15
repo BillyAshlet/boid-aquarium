@@ -24,6 +24,11 @@ export const BOID_PARAMS = {
   cohesionWeight: 0.4,
   detectionLength: 0.23, // forward ray length
   avoidanceWeight: 1.0,
+  // Gentle constant pull toward tank center (向心). 0 = off (checkpoint
+  // behavior). The honest version of the accidental containment that a
+  // tank-sized detectionLength once produced — A/B it against pure wall
+  // avoidance without abusing the ray length.
+  centeringWeight: 0,
   angleStep: 18, // degrees per rotation attempt when the ray hits
   maxPitch: 57, // degrees — fish never swim like submarines
   turnSpeed: 2.8, // rad/s — heading change cap; makes turns read as swimming
@@ -206,6 +211,16 @@ export class Flock {
             P.avoidanceWeight * (1 + urgency * 2)
           )
         );
+      }
+
+      // --- Centering: constant-magnitude drift toward tank center ---
+      if (P.centeringWeight > 0) {
+        _cand.copy(pos).multiplyScalar(-1);
+        if (_cand.lengthSq() > 1e-8) {
+          force.add(
+            steerToward(_cand, vel, _force).multiplyScalar(P.centeringWeight)
+          );
+        }
       }
 
       // --- Speed keeper: drift back to cruise, never stall or rocket ---

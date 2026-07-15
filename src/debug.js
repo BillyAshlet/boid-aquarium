@@ -195,8 +195,11 @@ export function createDebug({ world, scene, input, presentation, flock }) {
   addParam(boidsFolder, BOID_PARAMS, 'alignmentWeight', { min: 0, max: 5, step: 0.05, hardMin: 0 });
   addParam(boidsFolder, BOID_PARAMS, 'cohesionRadius', { min: 0.05, max: 0.8, step: 0.01, hardMin: 0 });
   addParam(boidsFolder, BOID_PARAMS, 'cohesionWeight', { min: 0, max: 5, step: 0.05, hardMin: 0 });
-  addParam(boidsFolder, BOID_PARAMS, 'detectionLength', { min: 0.02, max: 0.5, step: 0.01, hardMin: 0.01 });
+  // max 2.5 > tank diagonal: deliberately reachable "accidental
+  // containment" territory (the old misdiagnosis turned aesthetic)
+  addParam(boidsFolder, BOID_PARAMS, 'detectionLength', { min: 0.02, max: 2.5, step: 0.01, hardMin: 0.01, hardMax: 10 });
   addParam(boidsFolder, BOID_PARAMS, 'avoidanceWeight', { min: 0, max: 8, step: 0.1, hardMin: 0 });
+  addParam(boidsFolder, BOID_PARAMS, 'centeringWeight', { min: 0, max: 2, step: 0.01, hardMin: 0 });
   addParam(boidsFolder, BOID_PARAMS, 'angleStep', { min: 5, max: 45, step: 1, hardMin: 1, hardMax: 90 });
   addParam(boidsFolder, BOID_PARAMS, 'maxPitch', { min: 0, max: 80, step: 1, hardMin: 0, hardMax: 89 });
   addParam(boidsFolder, BOID_PARAMS, 'turnSpeed', { min: 0.2, max: 10, step: 0.1, hardMin: 0.05 });
