@@ -43,7 +43,6 @@ const UP = new THREE.Vector3(0, 1, 0);
 const _sep = new THREE.Vector3();
 const _ali = new THREE.Vector3();
 const _coh = new THREE.Vector3();
-const _diff = new THREE.Vector3();
 const _desired = new THREE.Vector3();
 const _force = new THREE.Vector3();
 const _dir = new THREE.Vector3();
@@ -121,6 +120,19 @@ export class Flock {
     this.velocities.length = n;
     this.forces.length = n;
 
+    // Flat scratch buffers for the social pair pass (see step()'s perf
+    // note). Rebuilt with the school; never touched by consumers.
+    this._f32 = {};
+    for (const k of [
+      'px', 'py', 'pz', 'vx', 'vy', 'vz',
+      'sepX', 'sepY', 'sepZ', 'aliX', 'aliY', 'aliZ', 'cohX', 'cohY', 'cohZ',
+    ]) {
+      this._f32[k] = new Float32Array(n);
+    }
+    this._nSep = new Uint16Array(n);
+    this._nAli = new Uint16Array(n);
+    this._nCoh = new Uint16Array(n);
+
     if (this.mesh) {
       this.scene.remove(this.mesh);
       this.mesh.dispose();
@@ -135,44 +147,73 @@ export class Flock {
     const P = BOID_PARAMS;
     const n = this.positions.length;
 
+    // --- The three social rules: one symmetric pair pass ---
+    // Perf shape (1000 fish × 60 Hz ≈ 30M pair visits/s): flat typed
+    // arrays instead of Vector3 method calls, squared distances with an
+    // early-out at the largest radius, and each pair visited once but
+    // applied to both fish (the math is symmetric). A spatial grid buys
+    // little while cohesionRadius spans most of the tank — revisit if
+    // the radii ever shrink (e.g. hunting multi-wave regimes).
+    const { px, py, pz, vx, vy, vz, sepX, sepY, sepZ, aliX, aliY, aliZ, cohX, cohY, cohZ } = this._f32;
+    const nSep = this._nSep;
+    const nAli = this._nAli;
+    const nCoh = this._nCoh;
+    for (let i = 0; i < n; i++) {
+      const p = this.positions[i];
+      const v = this.velocities[i];
+      px[i] = p.x; py[i] = p.y; pz[i] = p.z;
+      vx[i] = v.x; vy[i] = v.y; vz[i] = v.z;
+      sepX[i] = sepY[i] = sepZ[i] = 0;
+      aliX[i] = aliY[i] = aliZ[i] = 0;
+      cohX[i] = cohY[i] = cohZ[i] = 0;
+      nSep[i] = nAli[i] = nCoh[i] = 0;
+    }
+    const sepR2 = P.separationRadius * P.separationRadius;
+    const aliR2 = P.alignmentRadius * P.alignmentRadius;
+    const cohR2 = P.cohesionRadius * P.cohesionRadius;
+    const maxR2 = Math.max(sepR2, aliR2, cohR2);
+    for (let i = 0; i < n; i++) {
+      const xi = px[i];
+      const yi = py[i];
+      const zi = pz[i];
+      for (let j = i + 1; j < n; j++) {
+        const dx = xi - px[j];
+        const dy = yi - py[j];
+        const dz = zi - pz[j];
+        const d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 >= maxR2) continue;
+        if (d2 < sepR2 && d2 > 1e-12) {
+          // repulsion, stronger the closer: Δ/d² (magnitude 1/d)
+          const w = 1 / d2;
+          sepX[i] += dx * w; sepY[i] += dy * w; sepZ[i] += dz * w; nSep[i]++;
+          sepX[j] -= dx * w; sepY[j] -= dy * w; sepZ[j] -= dz * w; nSep[j]++;
+        }
+        if (d2 < aliR2) {
+          aliX[i] += vx[j]; aliY[i] += vy[j]; aliZ[i] += vz[j]; nAli[i]++;
+          aliX[j] += vx[i]; aliY[j] += vy[i]; aliZ[j] += vz[i]; nAli[j]++;
+        }
+        if (d2 < cohR2) {
+          cohX[i] += px[j]; cohY[i] += py[j]; cohZ[i] += pz[j]; nCoh[i]++;
+          cohX[j] += xi; cohY[j] += yi; cohZ[j] += zi; nCoh[j]++;
+        }
+      }
+    }
+
     for (let i = 0; i < n; i++) {
       const pos = this.positions[i];
       const vel = this.velocities[i];
       const force = this.forces[i].set(0, 0, 0);
 
-      // --- The three social rules (one O(N) pass) ---
-      _sep.set(0, 0, 0);
-      _ali.set(0, 0, 0);
-      _coh.set(0, 0, 0);
-      let nSep = 0;
-      let nAli = 0;
-      let nCoh = 0;
-      for (let j = 0; j < n; j++) {
-        if (j === i) continue;
-        const d = pos.distanceTo(this.positions[j]);
-        if (d < P.separationRadius && d > 1e-6) {
-          // repulsion, stronger the closer
-          _diff.copy(pos).sub(this.positions[j]).divideScalar(d * d);
-          _sep.add(_diff);
-          nSep++;
-        }
-        if (d < P.alignmentRadius) {
-          _ali.add(this.velocities[j]);
-          nAli++;
-        }
-        if (d < P.cohesionRadius) {
-          _coh.add(this.positions[j]);
-          nCoh++;
-        }
-      }
-      if (nSep > 0) {
+      if (nSep[i] > 0) {
+        _sep.set(sepX[i], sepY[i], sepZ[i]);
         force.add(steerToward(_sep, vel, _force).multiplyScalar(P.separationWeight));
       }
-      if (nAli > 0) {
+      if (nAli[i] > 0) {
+        _ali.set(aliX[i], aliY[i], aliZ[i]);
         force.add(steerToward(_ali, vel, _force).multiplyScalar(P.alignmentWeight));
       }
-      if (nCoh > 0) {
-        _coh.divideScalar(nCoh).sub(pos);
+      if (nCoh[i] > 0) {
+        _coh.set(cohX[i], cohY[i], cohZ[i]).divideScalar(nCoh[i]).sub(pos);
         force.add(steerToward(_coh, vel, _force).multiplyScalar(P.cohesionWeight));
       }
 
