@@ -40,6 +40,20 @@ This file is the engineering source of truth; if they conflict, this file wins.
   complexity *living at this edge*, not just complexity. Use it as the
   acceptance test for tuning: if you can summarize the motion in a
   sentence, it's too ordered; if you can't sense coordination, too wild.
+- **M1 preservation = a living mode, not an archive（活的模式）—
+  revised 2026-07-15, supersedes the tag+bundle plan.** "Pure flock,
+  nothing else" stays permanently loadable inside the evolving game:
+  preset JSON grows from parameter capture into **intent capture**
+  (params + mode + visual theme + which systems participate), so M1
+  mode inherits every future perf win and bug fix automatically.
+  Hard requirement from day one of M2: **every new world system is
+  born with an enable flag** — disabled = never constructed (the
+  `world.systems` array is the seam; the FluidField interface already
+  makes "fluid off" = zero field). Monochrome as a preset-selectable
+  theme lands with M3.5/M5 look work. The `m1-standing-wave` tag
+  remains as an exact-experience safety net only — the mode preserves
+  the *idea*, the tag preserves the *moment*. Scene-preset schema
+  details pending ratification (see M1 architecture discussion).
 - **Tank dimensions are platform-specific — decided 2026-07-15,
   implement before M2.** Mobile keeps the toy scale (1.2 × 0.8 × 0.5 —
   the original is small for a reason); desktop gets aquarium scale
@@ -344,5 +358,8 @@ This file is the engineering source of truth; if they conflict, this file wins.
   camera reframe on change) as the multi-gyre space experiment; preset
   JSON gains a tuned-in-tank note. Then Billy: bottle keepers
   (`m1-crowded-1000` etc.) → drop maxForce per the tuning-order rule →
-  rebuild weights → bottle post-retune baseline → close M1
-  (`m1-close` tag + built bundle). Then M2.
+  rebuild weights → bottle post-retune baseline → close M1 (final
+  baseline + `m1-close` safety-net tag; no bundle — preservation is
+  the living pure-flock mode). Mode infrastructure is NOT an M1 close
+  criterion; it's an M2 day-one requirement (rings born with an
+  enable flag). Then M2.

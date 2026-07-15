@@ -128,3 +128,19 @@ collective → global fields last), not just intuition.
 vocabulary — "folds back through itself" has no knob. When that
 happens the missing parameter is usually structural (space, obstacles,
 boundary shape), not another weight.
+
+## 2026-07-15 (evening) — Preservation gets rethought: the mode, not the museum
+Billy pushed back on the tag+bundle plan, correctly: a tag is a
+context switch ("make a whole moving job out of looking") and a built
+bundle is frozen art that no future bug fix can reach. Revised
+strategy: **M1 pure-flock becomes a permanent mode of the living
+game** — preset JSON grows from parameter capture into intent capture
+(params + mode + theme + participating systems), and every system
+from M2 onward is born with an enable flag. The tag stays as an
+exact-moment safety net; the mode carries the idea forward. Deeper
+mode-system architecture (game.js as mode runner, theme axis, schema
+versioning) under discussion — recorded when ratified.
+**Learned:** archives preserve what a thing *was*; living modes
+preserve what it *is for*. Billy wants the second, and the codebase
+was accidentally already shaped for it (world.systems + interface
+seams).
