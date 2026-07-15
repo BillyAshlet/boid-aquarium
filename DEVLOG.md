@@ -85,3 +85,25 @@ intent, engineering docs never mirrored, milestone digests on request.
 **Learned:** watching a system run (M1 fish on desktop) generates
 better design decisions than planning it did — three of today's four
 decisions came from observation, not speculation.
+
+## 2026-07-15 — The standing wave gets a name, and tuning gets a memory
+Billy's parameter archaeology (his correction of my mis-mapped audit,
+then his own retune) landed somewhere neither of us predicted: **one
+large coherent gyre** — 500 fish cycling the tank like a slow current.
+His go signal green-lit the tooling session. Landed: the **preset
+tool** (localStorage stable + copy/paste JSON bridging
+desktop-precision and phone-feel; ★ built-ins imported from
+`presets/`), the standing wave bottled AND promoted to code defaults
+before anything else changed — checkpoint first, his explicit
+workflow rule. Headroom for 1000 fish plus a ~2.6× perf pass
+(symmetric flat-array pair loop; grid consciously deferred — with
+cohesionRadius spanning most of the tank it buys nothing yet).
+`centeringWeight` gives the old misdiagnosis an honest knob, and
+`sepFalloff` makes the separation-function discussion a dropdown
+instead of a debate.
+**Learned:** a wrong diagnosis can still find a real aesthetic — the
+"accidental containment" read was based on mis-mapped numbers, but
+the described behavior was worth building a knob for. And: bottle the
+checkpoint *before* the session that might improve on it; the tool
+that preserves an aesthetic has to exist before the retune that
+endangers it.

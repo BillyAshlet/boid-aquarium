@@ -256,6 +256,26 @@ This file is the engineering source of truth; if they conflict, this file wins.
   doc policy recorded (repo = engineering truth, Notion = design
   intent, no mirroring; inline revision-color annotations rejected in
   favor of git + "revised M<n>" tags). Panel scroll re-verified live.
-- **Next up:** Billy's M1 tuning session — opener: TANK.depth
-  experiment (0.5 → ~0.35–0.4), then radii → weights → turn feel →
-  bottle `presets/m1-boids-baseline.json` and close M1. Then M2.
+- **2026-07-15 — Done: M1 tooling session (Billy's go signal).**
+  Billy's tuning found the **standing wave**: 500 fish, one large
+  coherent gyre. That set is promoted to BOID_PARAMS defaults (↺
+  returns here) and bottled as `presets/m1-standing-wave.json`, a ★
+  built-in. New panel folder `presets 预设`: save/load/delete named
+  presets (localStorage scratchpad), copy-as-JSON + paste-apply — the
+  desktop-tunes/phone-feels bridge; presets cover BOID_PARAMS only
+  (input tuning stays per-device). Preset-apply widens slider windows
+  rather than clamping (addParam registry + ensureVisible). Headroom:
+  fishCount → 1000, detectionLength slider → 2.5 (hardMax 10).
+  `centeringWeight` added — honest central-containment knob (constant
+  steer toward center, 0 = off; 1.0 pulls mean center-distance 0.37 →
+  0.05, gentle range likely ≤0.15). `sepFalloff` dropdown
+  (inverse/linear/invlog; steerToward normalizes the sum, so shape
+  re-weights direction, not magnitude). Perf: symmetric flat-typed-
+  array pair pass — 500: 2.37→1.08 ms, 1000: 9.23→3.59 ms; grid
+  deferred until radii shrink. `window.aquarium` exposes BOID_PARAMS.
+- **Next up:** Billy's live retune on the phone — drop `maxForce` from
+  5.2 and re-listen to everything (relationships, not prescribed
+  numbers: keep maxSpeed ≈ 2× cruise; weights re-balance once the
+  clamp is audible). Optional sepFalloff A/B by feel. Then bottle the
+  post-retune baseline and close M1. Parked: multi-wave question
+  (smaller alignmentRadius vs M2 posts breaking the symmetry).
