@@ -50,10 +50,25 @@ This file is the engineering source of truth; if they conflict, this file wins.
   born with an enable flag** — disabled = never constructed (the
   `world.systems` array is the seam; the FluidField interface already
   makes "fluid off" = zero field). Monochrome as a preset-selectable
-  theme lands with M3.5/M5 look work. The `m1-standing-wave` tag
-  remains as an exact-experience safety net only — the mode preserves
-  the *idea*, the tag preserves the *moment*. Scene-preset schema
-  details pending ratification (see M1 architecture discussion).
+  theme lands with M3.5/M5 look work.
+  **Ratified 2026-07-17 — architecture discussion closed:**
+  (1) **Named modes are a hard cap: two or three, curated, total.**
+  A mode is not a thing that runs — it is a list of what gets built.
+  Free-form system toggling belongs to the debug panel: exploration,
+  never production. Future session thinking "one more mode won't
+  hurt": that instinct is precisely what this sentence exists to stop.
+  (2) **Intent vs appearance is an explicit principle.** The mode
+  preserves what M1 is *for* — it evolves with the engine, and opening
+  meditation mode after M4 and getting "a different meditation" is a
+  feature, not drift: the intent survived, the engine lived. The
+  `m1-standing-wave` tag preserves what M1 *was* — frozen, exact, a
+  safety net. Both roles are legitimate; never ask either to do the
+  other's job.
+  (3) **Preset schema keys are additive-only** — hard workflow
+  discipline; the rule itself lives under Workflow rules.
+  A `"ui": "minimal"` schema field was evaluated and REJECTED: UI
+  presentation is its own design axis, to be designed when modes have
+  faces — not smuggled in as a boolean.
 - **Tank dimensions are platform-specific — decided 2026-07-15,
   implement before M2.** Mobile keeps the toy scale (1.2 × 0.8 × 0.5 —
   the original is small for a reason); desktop gets aquarium scale
@@ -93,8 +108,6 @@ This file is the engineering source of truth; if they conflict, this file wins.
   colliders opposing avoidance → emergent contour-following, prototyped
   M2 posts-only; field influence = the cursor current above.
 - **Vanilla JS + Three.js. No framework. Vite is a dev server only.**
-- **Desktop = simplified fallback** (fixed gravity, mouse/keys). Mobile is
-  the real game and the performance budget.
 - **Canonical landscape frame（canonical 横屏系）.** The game world is
   always landscape and is anchored to the PHYSICAL DEVICE frame, never
   to orientation APIs (they lie: iPadOS reports angle 0 in docked
@@ -193,6 +206,13 @@ This file is the engineering source of truth; if they conflict, this file wins.
   mourn gets exported and committed to `presets/` in the same session
   you find it — clearing site data (or a browser update) wipes the
   scratchpad silently.
+- **Preset schema keys are additive-only（只增不删改）— hard rule,
+  ratified 2026-07-17.** Never rename, repurpose, or delete a key any
+  committed preset uses. New keys ship with defaults; old presets
+  degrade gracefully (unknown keys ignored, missing keys → defaults).
+  Renaming a key feels harmless in the moment and breaks every
+  archived preset silently — this is the rule a future session
+  violates innocently unless it reads this sentence first.
 - One system per session. Every session ends with a visible change on screen.
 - Commit every working state. Before risky changes, commit first.
 - Infrastructure code (textbook stuff) can land in big chunks; anything
@@ -353,6 +373,15 @@ This file is the engineering source of truth; if they conflict, this file wins.
   recorded as the project's aesthetic thesis. Möbius/multi-gyre
   recorded as parked target. Billy keeps exploring M1 — no rush to
   close.
+- **2026-07-17 — Architecture ratifications recorded (cross-window
+  handoff).** The mode-not-museum discussion (parallel session,
+  2026-07-15 evening) is closed and recorded: named-modes hard cap
+  (2–3 curated, total; panel = exploration, modes = production),
+  intent-vs-appearance principle (mode = what M1 is *for*, tag = what
+  M1 *was*), additive-only preset schema keys (new Workflow rule),
+  `"ui"` schema field rejected as a smuggled design axis. Bonus
+  cleanup: deleted the stale "Desktop = simplified fallback" bullet
+  that had survived its own supersession since 07-12.
 - **Next up (build):** platform-specific tank — TANK selected by
   platform at boot, dims live-tunable on the panel (shell rebuild +
   camera reframe on change) as the multi-gyre space experiment; preset

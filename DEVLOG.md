@@ -144,3 +144,20 @@ versioning) under discussion — recorded when ratified.
 preserve what it *is for*. Billy wants the second, and the codebase
 was accidentally already shaped for it (world.systems + interface
 seams).
+
+## 2026-07-17 — Ratifications recorded; the mode architecture is settled
+Cross-window handoff: Billy ratified all three pending items from the
+mode-not-museum discussion, and this session recorded them in
+CLAUDE.md. Named modes are now a hard cap (two or three, curated —
+"a mode is a list of what gets built, not a thing that runs";
+free-form toggling stays in the panel). Intent-vs-appearance is an
+explicit principle (mode = what M1 is for; tag = what M1 was). Preset
+schema keys are additive-only, recorded as a workflow rule where
+future preset-touching sessions will actually look. The `"ui"` schema
+field died in review — presentation is its own axis, not a boolean.
+Also swept out the stale "desktop = simplified fallback" bullet that
+had outlived its supersession by five days.
+**Learned:** cross-window continuity worked — memory + CLAUDE.md +
+commits carried a whole architecture discussion between sessions that
+never saw each other. The docs are doing their job as the shared
+brain; the recording discipline is what makes parallel sessions safe.
