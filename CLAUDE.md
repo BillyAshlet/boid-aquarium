@@ -80,8 +80,28 @@ This file is the engineering source of truth; if they conflict, this file wins.
   platform-scoped (name them `m-*` / `d-*`; preset JSON should record
   the tank it was tuned in), and radius params tuned on one platform
   won't transfer verbatim — that's inherent, not a bug.
-- **Fixed camera, world tilts.** Device gravity vector rotates the in-world
-  gravity; the tank stays fixed on screen. No orbit camera.
+  **Scaling model A ratified 2026-07-17 (built same day):** only the
+  tank scales. Fish size, perception radii, detectionLength, wall
+  margin are creature properties and stay fixed — B (scale everything)
+  is scientifically empty (preserves every dimensionless ratio, same
+  gyre in a roomier costume). Density and radius-vs-span ratios ARE
+  the experiment; `fishCount` is the density knob. TANK is
+  live-mutable (panel `tank 水槽` folder; `notifyTankChange()` rebuilds
+  shell + re-homes camera); preset JSON now records the tank it was
+  tuned in (additive `tank` key).
+- **Fixed camera, world tilts — revised M1: a MOBILE GAME rule, not
+  project-wide.** On mobile, device gravity rotates the in-world
+  gravity and the tank stays fixed on screen — the rule's reason is
+  that camera motion must never fight tilt, which is tilt-specific.
+  Desktop (the world) has navigation: drag = orbit, right-drag = pan,
+  wheel = zoom, `0` = home, `1/3/7` = front/side/top snaps
+  (OrbitControls; damping momentum flushed on snaps so home is exact).
+  Ortho projection toggle parked — the only expensive item.
+  Camera-follow rule for later (answers the "arbitrary target"
+  question): when fish-cam (M6) is built, it is built as
+  camera-follows-a-TARGET-PROVIDER (position + orientation source),
+  never hardcoded fish access — the general version then costs
+  nothing. No target system before a second customer exists.
 - **Gravity = `accelerationIncludingGravity`** mapped to world down. Rotation
   around the gravity axis is a physical no-op — do not try to add it.
   Shake impulses via `acceleration` come later, as a layer on top.
@@ -136,8 +156,9 @@ This file is the engineering source of truth; if they conflict, this file wins.
 
 ## Conventions 约定
 
-- **Units: meters, seconds.** Tank interior: 1.2 wide (x) × 0.8 tall (y) ×
-  0.5 deep (z), origin at tank center. (Dimensions tunable, convention not.)
+- **Units: meters, seconds.** Tank interior is platform-specific
+  (`TANK_PRESETS` in world.js: mobile 1.2×0.8×0.5, desktop 2.0×1.2×0.8),
+  origin at tank center. Dims live-tunable; the convention is not.
 - **Coordinates:** Three.js right-handed, +Y up (screen up), +X right,
   +Z toward viewer. Gravity is a world-space vector owned by `World`,
   default `(0, -9.8, 0)`.
@@ -396,10 +417,23 @@ This file is the engineering source of truth; if they conflict, this file wins.
   `"ui"` schema field rejected as a smuggled design axis. Bonus
   cleanup: deleted the stale "Desktop = simplified fallback" bullet
   that had survived its own supersession since 07-12.
-- **Next up (build):** platform-specific tank — TANK selected by
-  platform at boot, dims live-tunable on the panel (shell rebuild +
-  camera reframe on change) as the multi-gyre space experiment; preset
-  JSON gains a tuned-in-tank note. Then Billy: bottle keepers
+- **2026-07-17 — Tank divergence + desktop navigation built
+  (desktop-verified).** TANK platform-selected at boot
+  (`TANK_PRESETS`), live-mutable via panel `tank 水槽` folder
+  (sliders + mobile/desktop quick buttons; `notifyTankChange()` →
+  shell rebuild + camera re-home). Scaling model A. Desktop camera:
+  OrbitControls (drag/right-drag/wheel), `0` home, `1/3/7` view
+  snaps; damping momentum flushed on snaps (undamped update BEFORE
+  placing the camera — after placement it flings, field-tested);
+  resizes never stomp a user-moved camera. Preset copy-JSON gains
+  additive `tank` key. Hardened: 0×0 viewport (hidden tab /
+  mid-rotation) can no longer NaN the camera. Verified: orbit via
+  synthetic pointers, exact home after momentum drag, framing scales
+  with tank (2.21→2.94 on widen), 500 fish zero escapes in the
+  2.0×1.2×0.8 tank, mobile paths untouched (controls/keys
+  desktop-only). Billy's phone: quick regression check when convenient.
+- **Next up:** Billy runs the multi-gyre space experiment in the big
+  tank (orbit around the far side — the whole point). Bottle keepers
   (`m1-crowded-1000` etc.) → drop maxForce per the tuning-order rule →
   rebuild weights → bottle post-retune baseline → close M1 (final
   baseline + `m1-close` safety-net tag; no bundle — preservation is

@@ -1,8 +1,33 @@
 import * as THREE from 'three';
 
-// Tank interior, meters. Dimensions are tunable; the convention
-// (meters, origin at tank center, +Y up) is not.
-export const TANK = { width: 1.2, height: 0.8, depth: 0.5 };
+// Tank interior, meters — PLATFORM-SPECIFIC (decided 2026-07-15).
+// Mobile keeps toy scale (the original toy is small for a reason);
+// desktop gets aquarium scale — space to inhabit, and the direct
+// experiment for the multi-gyre target. The convention (meters, origin
+// at tank center, +Y up) is universal; only the numbers diverge.
+//
+// Scaling model A (ratified 2026-07-17): ONLY the tank scales. Fish
+// size, perception radii, detectionLength, wall margin are creature
+// properties and stay fixed — the dimensionless ratios (radius vs tank
+// span, fish per volume) ARE the experiment. fishCount is the density
+// knob.
+export const TANK_PRESETS = {
+  mobile: { width: 1.2, height: 0.8, depth: 0.5 },
+  desktop: { width: 2.0, height: 1.2, depth: 0.8 },
+};
+const platform = navigator.maxTouchPoints === 0 ? 'desktop' : 'mobile';
+export const TANK = { ...TANK_PRESETS[platform] };
+
+// Dims are live-tunable: the panel mutates TANK.* directly (every
+// consumer reads at use time), then calls notifyTankChange() so the
+// shell rebuilds and the camera re-homes.
+const tankListeners = [];
+export function onTankChange(fn) {
+  tankListeners.push(fn);
+}
+export function notifyTankChange() {
+  for (const fn of tankListeners) fn();
+}
 
 export const GRAVITY = 9.81;
 

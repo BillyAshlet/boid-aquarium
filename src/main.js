@@ -1,4 +1,4 @@
-import { World } from './world.js';
+import { World, TANK, notifyTankChange } from './world.js';
 import { createScene } from './scene.js';
 import { MotionInput, mountEnableButton } from './input.js';
 import { Flock, BOID_PARAMS } from './boids.js';
@@ -19,12 +19,21 @@ const debug = createDebug({ world, scene, input, presentation, flock });
 
 // Debug handle for console poking and automated verification — reads
 // real state instead of scraping the panel UI. Not part of the game.
-window.aquarium = { world, input, presentation, flock, BOID_PARAMS };
+window.aquarium = {
+  world,
+  input,
+  presentation,
+  flock,
+  BOID_PARAMS,
+  TANK,
+  notifyTankChange,
+};
 
 // The whole game, one frame at a time: senses → physics → picture → window.
 renderer.setAnimationLoop((nowMs) => {
   input.update();
   presentation.updateOrientation();
+  presentation.updateCamera(); // damped orbit controls tick (desktop)
   world.step(nowMs);
   renderer.render(scene, camera);
   debug.update(nowMs);

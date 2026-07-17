@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Pane } from 'tweakpane';
-import { GRAVITY } from './world.js';
+import { GRAVITY, TANK, TANK_PRESETS, notifyTankChange } from './world.js';
 import { screenAngle } from './input.js';
 import { BOID_PARAMS } from './boids.js';
 import m1StandingWave from '../presets/m1-standing-wave.json';
@@ -176,6 +176,28 @@ export function createDebug({ world, scene, input, presentation, flock }) {
     label: 'screen',
   });
 
+  // Tank dims 水槽 — platform-selected at boot (scaling model A: only
+  // the tank scales; creature-scale params stay put). Live-tunable for
+  // the multi-gyre space experiment; shell + camera follow on release.
+  const tankFolder = pane.addFolder({ title: 'tank 水槽', expanded: false });
+  const onTankSlider = (ev) => {
+    if (ev.last) notifyTankChange();
+  };
+  addParam(tankFolder, TANK, 'width', { min: 0.4, max: 4, step: 0.05, hardMin: 0.2, hardMax: 10 }).on('change', onTankSlider);
+  addParam(tankFolder, TANK, 'height', { min: 0.3, max: 3, step: 0.05, hardMin: 0.2, hardMax: 10 }).on('change', onTankSlider);
+  addParam(tankFolder, TANK, 'depth', { min: 0.2, max: 3, step: 0.05, hardMin: 0.1, hardMax: 10 }).on('change', onTankSlider);
+  const applyTankPreset = (dims) => {
+    Object.assign(TANK, dims);
+    for (const r of registry) r.ensureVisible();
+    notifyTankChange();
+  };
+  tankFolder
+    .addButton({ title: 'mobile dims 1.2×0.8×0.5' })
+    .on('click', () => applyTankPreset(TANK_PRESETS.mobile));
+  tankFolder
+    .addButton({ title: 'desktop dims 2.0×1.2×0.8' })
+    .on('click', () => applyTankPreset(TANK_PRESETS.desktop));
+
   const boidsFolder = pane.addFolder({ title: 'boids 鱼群', expanded: false });
   addParam(boidsFolder, BOID_PARAMS, 'fishCount', {
     min: 1,
@@ -317,6 +339,10 @@ export function createDebug({ world, scene, input, presentation, flock }) {
       _type: 'boid-preset',
       name: presetUI.name.trim() || 'untitled',
       date: new Date().toISOString().slice(0, 10),
+      // Additive key (2026-07-17): the tank this preset was tuned in.
+      // Radius params don't transfer verbatim across tank scales —
+      // that's inherent to scaling model A, not a bug.
+      tank: { ...TANK },
       params: { ...BOID_PARAMS },
     });
     presetUI.paste = json; // always mirrored — manual-copy fallback

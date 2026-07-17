@@ -161,3 +161,23 @@ had outlived its supersession by five days.
 commits carried a whole architecture discussion between sessions that
 never saw each other. The docs are doing their job as the shared
 brain; the recording discipline is what makes parallel sessions safe.
+
+## 2026-07-17 (later) — The tank diverges; desktop learns to walk
+Billy's go on tank divergence, with three judgments first: scaling
+model A chosen over B by dimensional analysis (B preserves every
+dimensionless ratio — same gyre, roomier costume; A changes exactly
+the ratios the multi-gyre hypothesis names); camera navigation bundled
+(a 2 m tank judged through a fixed front window is half-invisible);
+Blender's G/R/S politely declined — those are object-edit transforms,
+not viewport nav; even Blender orbits with middle-drag. Built:
+platform-selected live-tunable TANK, OrbitControls with view snaps
+and an exact home (damping momentum must burn on the OLD pose —
+flushing after placement flings the camera, found by test), preset
+tank-stamp, 0×0-viewport NaN guard. "Fixed camera, world tilts" is
+now explicitly scoped: a mobile game rule. Fish-cam future recorded
+as camera-follows-target-provider — no system until a second customer.
+**Learned:** the cheapest scaling question ("what scales?") was the
+deepest one — the answer came from dimensionless ratios, not code.
+And OrbitControls' damping is stateful in a way that punishes
+teleporting cameras; every "snap to view" feature everywhere has
+probably fought this exact bug.
