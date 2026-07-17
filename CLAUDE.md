@@ -257,6 +257,20 @@ This file is the engineering source of truth; if they conflict, this file wins.
   Observation for the record (Billy, M1): separation is anti-collision;
   **alignment + cohesion are the macro-structure engine** — macro
   reorganization comes from those two.
+- **Layered rendering（分层渲染）— parked 2026-07-17, revisit at M3.5.**
+  Possibility to preserve, not to build: one engine running once, with
+  the render pipeline supporting multiple simultaneous visual
+  treatments — e.g. monochrome pure-flock as layer 1, full colored game
+  as layer 2 — and a spatial reveal mechanism (cursor-following region)
+  choosing which layer displays where. Same fish, same physics, two
+  visual channels; motivated by future portfolio/website integration.
+  Architecturally distinct from modes: **modes decide what gets BUILT
+  at boot; layers would decide what gets RENDERED at runtime.**
+  Binding constraint on M3.5's theme design: themes must be structured
+  as independent render passes/treatments, NOT a single mutually
+  exclusive global switch — "one theme active at a time" baked in would
+  make layers expensive to retrofit. Leave the door open cheaply; do
+  not walk through it.
 - **First-person fish view（M6 stretch）:** camera bound to one boid,
   swimming with it — cheap (a camera attachment), philosophically
   aligned (inhabit an agent driven by simple rules, no scripted camera
