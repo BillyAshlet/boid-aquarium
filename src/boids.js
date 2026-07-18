@@ -28,6 +28,15 @@ export const BOID_PARAMS = {
   alignmentWeight: 0.45,
   cohesionRadius: 0.3, // belonging neighborhood
   cohesionWeight: 0.4,
+  // Forward field of view, degrees (360 = omnidirectional = off).
+  // Applies to ALIGNMENT and COHESION only — vision drives schooling.
+  // Separation stays omnidirectional by design: it models lateral-line
+  // proximity sense, and blinding it behind causes rear-end collisions.
+  // The experiment (Billy's hypothesis, 2026-07-17): a forward cone
+  // breaks pair symmetry, so direction information must TRAVEL through
+  // the school instead of propagating instantly — the delay may be what
+  // lets local pockets (multi-gyre) form and persist.
+  perceptionFOV: 360,
   detectionLength: 0.23, // forward ray length
   avoidanceWeight: 1.0,
   // Gentle constant pull toward tank center (向心). 0 = off (checkpoint
@@ -44,6 +53,19 @@ export const BOID_PARAMS = {
 // this shrunken inner box, not the visual walls.
 const WALL_MARGIN = 0.05;
 const UP = new THREE.Vector3(0, 1, 0);
+
+// Half neighborhood (13 of 26 cells): with same-cell pairs taken in
+// sorted order, every cell pair is visited exactly once.
+const FWD = [];
+for (let oz = -1; oz <= 1; oz++) {
+  for (let oy = -1; oy <= 1; oy++) {
+    for (let ox = -1; ox <= 1; ox++) {
+      if (oz > 0 || (oz === 0 && oy > 0) || (oz === 0 && oy === 0 && ox > 0)) {
+        FWD.push([ox, oy, oz]);
+      }
+    }
+  }
+}
 
 // Scratch vectors — step() runs 60×/s over every fish; no allocations.
 const _sep = new THREE.Vector3();
@@ -89,6 +111,8 @@ export class Flock {
     this.positions = [];
     this.velocities = [];
     this.forces = []; // last net steering per fish — fed to the visualizer
+    this.lastStepMs = 0; // instrument: social+integrate cost per step
+    this.lastPairMode = 'brute'; // 'grid' | 'brute' — which pass ran
     this._geo = new THREE.CapsuleGeometry(0.008, 0.03, 4, 8);
     this._geo.rotateX(Math.PI / 2); // capsule length along +Z = forward
     this._mat = new THREE.MeshStandardMaterial({
@@ -130,7 +154,7 @@ export class Flock {
     // note). Rebuilt with the school; never touched by consumers.
     this._f32 = {};
     for (const k of [
-      'px', 'py', 'pz', 'vx', 'vy', 'vz',
+      'px', 'py', 'pz', 'vx', 'vy', 'vz', 'fx', 'fy', 'fz',
       'sepX', 'sepY', 'sepZ', 'aliX', 'aliY', 'aliZ', 'cohX', 'cohY', 'cohZ',
     ]) {
       this._f32[k] = new Float32Array(n);
@@ -138,6 +162,10 @@ export class Flock {
     this._nSep = new Uint16Array(n);
     this._nAli = new Uint16Array(n);
     this._nCoh = new Uint16Array(n);
+    // Spatial grid scratch (counting sort); cell arrays grow lazily in
+    // step() because grid dims follow the live radii and tank.
+    this._cellIdx = new Uint32Array(n);
+    this._sorted = new Uint32Array(n);
 
     if (this.mesh) {
       this.scene.remove(this.mesh);
@@ -150,17 +178,18 @@ export class Flock {
   }
 
   step(dt) {
+    const t0 = performance.now();
     const P = BOID_PARAMS;
     const n = this.positions.length;
 
-    // --- The three social rules: one symmetric pair pass ---
-    // Perf shape (1000 fish × 60 Hz ≈ 30M pair visits/s): flat typed
-    // arrays instead of Vector3 method calls, squared distances with an
-    // early-out at the largest radius, and each pair visited once but
-    // applied to both fish (the math is symmetric). A spatial grid buys
-    // little while cohesionRadius spans most of the tank — revisit if
-    // the radii ever shrink (e.g. hunting multi-wave regimes).
-    const { px, py, pz, vx, vy, vz, sepX, sepY, sepZ, aliX, aliY, aliZ, cohX, cohY, cohZ } = this._f32;
+    // --- The three social rules ---
+    // Perf shape: flat typed arrays, squared distances, each pair
+    // visited once and applied to both fish. Above ~200 fish a uniform
+    // spatial grid (cells ≥ the largest social radius, counting sort,
+    // 13-cell half neighborhood) replaces the O(N²) sweep — in the
+    // desktop tank at cohesionRadius 0.3 that skips ~⅔ of all pairs;
+    // the win grows as radii shrink or the tank grows.
+    const { px, py, pz, vx, vy, vz, fx, fy, fz, sepX, sepY, sepZ, aliX, aliY, aliZ, cohX, cohY, cohZ } = this._f32;
     const nSep = this._nSep;
     const nAli = this._nAli;
     const nCoh = this._nCoh;
@@ -169,6 +198,12 @@ export class Flock {
       const v = this.velocities[i];
       px[i] = p.x; py[i] = p.y; pz[i] = p.z;
       vx[i] = v.x; vy[i] = v.y; vz[i] = v.z;
+      const sp = Math.hypot(v.x, v.y, v.z);
+      if (sp > 1e-9) {
+        fx[i] = v.x / sp; fy[i] = v.y / sp; fz[i] = v.z / sp;
+      } else {
+        fx[i] = 0; fy[i] = 0; fz[i] = 1;
+      }
       sepX[i] = sepY[i] = sepZ[i] = 0;
       aliX[i] = aliY[i] = aliZ[i] = 0;
       cohX[i] = cohY[i] = cohZ[i] = 0;
@@ -180,38 +215,127 @@ export class Flock {
     const aliR2 = P.alignmentRadius * P.alignmentRadius;
     const cohR2 = P.cohesionRadius * P.cohesionRadius;
     const maxR2 = Math.max(sepR2, aliR2, cohR2);
-    for (let i = 0; i < n; i++) {
-      const xi = px[i];
-      const yi = py[i];
-      const zi = pz[i];
-      for (let j = i + 1; j < n; j++) {
-        const dx = xi - px[j];
-        const dy = yi - py[j];
-        const dz = zi - pz[j];
-        const d2 = dx * dx + dy * dy + dz * dz;
-        if (d2 >= maxR2) continue;
-        if (d2 < sepR2 && d2 > 1e-12) {
-          // contribution = Δ·w, so per-neighbor magnitude m(d) = w·d
-          let w;
-          if (shape === 'linear') {
-            const d = Math.sqrt(d2);
-            w = (sepR - d) / (sepR * d); // m = (r−d)/r
-          } else if (shape === 'invlog') {
-            const d = Math.sqrt(d2);
-            w = Math.log(sepR / d) / d; // m = ln(r/d)
-          } else {
-            w = 1 / d2; // 'inverse': m = 1/d — the original
+    const maxR = Math.sqrt(maxR2);
+    // FOV gates alignment + cohesion per-direction; 360° short-circuits.
+    const fovActive = P.perceptionFOV < 360;
+    const cosHalf = Math.cos(THREE.MathUtils.degToRad(P.perceptionFOV / 2));
+
+    const pair = (i, j) => {
+      const dx = px[i] - px[j];
+      const dy = py[i] - py[j];
+      const dz = pz[i] - pz[j];
+      const d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 >= maxR2 || d2 < 1e-12) return;
+      let seeIJ = true;
+      let seeJI = true;
+      if (fovActive) {
+        const inv = 1 / Math.sqrt(d2);
+        // i→j direction is −Δ; j→i direction is +Δ
+        seeIJ = (-dx * fx[i] - dy * fy[i] - dz * fz[i]) * inv >= cosHalf;
+        seeJI = (dx * fx[j] + dy * fy[j] + dz * fz[j]) * inv >= cosHalf;
+      }
+      if (d2 < sepR2) {
+        // contribution = Δ·w, so per-neighbor magnitude m(d) = w·d
+        let w;
+        if (shape === 'linear') {
+          const d = Math.sqrt(d2);
+          w = (sepR - d) / (sepR * d); // m = (r−d)/r
+        } else if (shape === 'invlog') {
+          const d = Math.sqrt(d2);
+          w = Math.log(sepR / d) / d; // m = ln(r/d)
+        } else {
+          w = 1 / d2; // 'inverse': m = 1/d — the original
+        }
+        sepX[i] += dx * w; sepY[i] += dy * w; sepZ[i] += dz * w; nSep[i]++;
+        sepX[j] -= dx * w; sepY[j] -= dy * w; sepZ[j] -= dz * w; nSep[j]++;
+      }
+      if (d2 < aliR2) {
+        if (seeIJ) { aliX[i] += vx[j]; aliY[i] += vy[j]; aliZ[i] += vz[j]; nAli[i]++; }
+        if (seeJI) { aliX[j] += vx[i]; aliY[j] += vy[i]; aliZ[j] += vz[i]; nAli[j]++; }
+      }
+      if (d2 < cohR2) {
+        if (seeIJ) { cohX[i] += px[j]; cohY[i] += py[j]; cohZ[i] += pz[j]; nCoh[i]++; }
+        if (seeJI) { cohX[j] += px[i]; cohY[j] += py[i]; cohZ[j] += pz[i]; nCoh[j]++; }
+      }
+    };
+
+    // Grid pass when it pays; brute sweep for small schools or when the
+    // radii span the tank (grid degenerates to a handful of cells).
+    let useGrid = n >= 200;
+    let nx = 1;
+    let ny = 1;
+    let nz = 1;
+    if (useGrid) {
+      const cell = Math.max(0.05, maxR);
+      nx = Math.min(32, Math.max(1, Math.floor(TANK.width / cell)));
+      ny = Math.min(32, Math.max(1, Math.floor(TANK.height / cell)));
+      nz = Math.min(32, Math.max(1, Math.floor(TANK.depth / cell)));
+      if (nx * ny * nz <= 8) useGrid = false;
+    }
+
+    if (!useGrid) {
+      this.lastPairMode = 'brute';
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) pair(i, j);
+      }
+    } else {
+      this.lastPairMode = 'grid';
+      const numCells = nx * ny * nz;
+      if (!this._starts || this._starts.length < numCells + 1) {
+        this._starts = new Uint32Array(numCells + 1);
+        this._cursor = new Uint32Array(numCells);
+      }
+      const starts = this._starts;
+      const cursor = this._cursor;
+      const cellIdx = this._cellIdx;
+      const sorted = this._sorted;
+      starts.fill(0, 0, numCells + 1);
+      cursor.fill(0, 0, numCells);
+      const cw = TANK.width / nx;
+      const ch = TANK.height / ny;
+      const cd = TANK.depth / nz;
+      const hw = TANK.width / 2;
+      const hh = TANK.height / 2;
+      const hd = TANK.depth / 2;
+      for (let i = 0; i < n; i++) {
+        const cx = Math.min(nx - 1, Math.max(0, Math.floor((px[i] + hw) / cw)));
+        const cy = Math.min(ny - 1, Math.max(0, Math.floor((py[i] + hh) / ch)));
+        const cz = Math.min(nz - 1, Math.max(0, Math.floor((pz[i] + hd) / cd)));
+        const c = (cz * ny + cy) * nx + cx;
+        cellIdx[i] = c;
+        starts[c + 1]++;
+      }
+      for (let c = 0; c < numCells; c++) starts[c + 1] += starts[c];
+      for (let i = 0; i < n; i++) {
+        const c = cellIdx[i];
+        sorted[starts[c] + cursor[c]++] = i;
+      }
+      for (let cz = 0; cz < nz; cz++) {
+        for (let cy = 0; cy < ny; cy++) {
+          for (let cx = 0; cx < nx; cx++) {
+            const c = (cz * ny + cy) * nx + cx;
+            const s0 = starts[c];
+            const s1 = starts[c + 1];
+            // pairs inside this cell, each once
+            for (let a = s0; a < s1; a++) {
+              const i = sorted[a];
+              for (let b = a + 1; b < s1; b++) pair(i, sorted[b]);
+            }
+            // pairs against the 13-cell forward half neighborhood
+            for (let k = 0; k < FWD.length; k++) {
+              const x2 = cx + FWD[k][0];
+              const y2 = cy + FWD[k][1];
+              const z2 = cz + FWD[k][2];
+              if (x2 < 0 || x2 >= nx || y2 < 0 || y2 >= ny || z2 < 0 || z2 >= nz) continue;
+              const c2 = (z2 * ny + y2) * nx + x2;
+              const t0c = starts[c2];
+              const t1c = starts[c2 + 1];
+              for (let a = s0; a < s1; a++) {
+                const i = sorted[a];
+                for (let b = t0c; b < t1c; b++) pair(i, sorted[b]);
+              }
+            }
           }
-          sepX[i] += dx * w; sepY[i] += dy * w; sepZ[i] += dz * w; nSep[i]++;
-          sepX[j] -= dx * w; sepY[j] -= dy * w; sepZ[j] -= dz * w; nSep[j]++;
-        }
-        if (d2 < aliR2) {
-          aliX[i] += vx[j]; aliY[i] += vy[j]; aliZ[i] += vz[j]; nAli[i]++;
-          aliX[j] += vx[i]; aliY[j] += vy[i]; aliZ[j] += vz[i]; nAli[j]++;
-        }
-        if (d2 < cohR2) {
-          cohX[i] += px[j]; cohY[i] += py[j]; cohZ[i] += pz[j]; nCoh[i]++;
-          cohX[j] += xi; cohY[j] += yi; cohZ[j] += zi; nCoh[j]++;
         }
       }
     }
@@ -337,6 +461,7 @@ export class Flock {
     }
 
     this._writeMatrices();
+    this.lastStepMs = performance.now() - t0;
   }
 
   // Orientation: yaw + pitch follow velocity, roll locked (right vector

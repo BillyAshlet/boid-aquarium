@@ -181,3 +181,29 @@ deepest one — the answer came from dimensionless ratios, not code.
 And OrbitControls' damping is stateful in a way that punishes
 teleporting cameras; every "snap to view" feature everywhere has
 probably fought this exact bug.
+
+## 2026-07-17 (evening) — Vision gets a cone; the pair loop gets cells
+Billy's exploration verdict: space alone makes the current *legible*
+(top view shows internal eddies the front view flattened) but doesn't
+force multi-gyre. His new hypothesis is the best-argued yet:
+omnidirectional perception lets direction information propagate
+instantly, forcing global consensus — a forward FOV cone makes
+information *travel*, and the delay may let pockets persist. Built:
+`perceptionFOV` gating alignment + cohesion (separation stays omni —
+it's lateral-line, and blind-behind separation causes rear-endings);
+FOV breaks pair symmetry, which the new spatial hash grid was designed
+around (counting sort, half-neighborhood, brute fallback for small
+schools/tanks). Grid verdict reversed from the small tank: cohesion
+0.3 in a 2 m tank skips ~⅔ of pairs. Measured: 500 fish 1.08→0.70 ms,
+2000 @ 8.7 ms. Limits loosened (fishCount → 10000 hard). Multi-species
+architecture discussed, not built: one flock + species ids + K×K
+interaction matrix; a preset axis, not a mode axis. Fibonacci sphere
+formally passed on (uniform 3D sampling is wrong for a roll-locked
+fish). Billy's aside for the record: he prefers the desktop ecosystem
+now — in a mobile-first project. Noted without alarm; the game is
+still the game.
+**Learned:** non-reciprocal perception (i sees j ≠ j sees i) is where
+flocking literature says the interesting regimes live — and the FOV
+cone is the cheapest door into it. Also: performance verdicts have
+expiry dates; the tank change silently reversed the grid decision,
+and only re-asking caught it.

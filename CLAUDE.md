@@ -292,6 +292,26 @@ This file is the engineering source of truth; if they conflict, this file wins.
   exclusive global switch — "one theme active at a time" baked in would
   make layers expensive to retrofit. Leave the door open cheaply; do
   not walk through it.
+- **Multi-species — architecture agreed in discussion (2026-07-17),
+  awaiting Billy's ratification + scheduling (not before M1 close).**
+  Shape: ONE Flock, per-fish species id, per-species visual, and a
+  K×K **interaction matrix** (per-rule weight multipliers across
+  species boundaries) — NOT multiple Flock instances (cross-instance
+  pair passes duplicate the grid and the perception loop). All four
+  interaction styles are just matrix entries: independent coexistence
+  = identity on ali/coh; treat-as-obstacle = zero ali/coh, full sep;
+  weak mixing = fractional off-diagonals; predator/prey = asymmetric
+  entries (v3 — needs a seek rule, defer until wanted). Species
+  configs are a **preset axis, not a mode axis** — the 2–3 mode hard
+  cap stands; an "ecology mode" is exactly the temptation the cap
+  exists to resist. Start-small v1: 2 species, shared behavior params,
+  2×2 matrix, per-species color.
+- **Fibonacci-sphere avoidance sampling — evaluated and REJECTED
+  (Billy, 2026-07-17). Do not re-litigate.** Uniform 3D direction
+  candidates are wrong for roll-locked, pitch-clamped fish — the
+  existing horizontal-biased yaw-sweep-then-pitch sampling is MORE
+  correct for this creature, and avoidance isn't performance-bound.
+  A beautiful algorithm without a problem here.
 - **First-person fish view（M6 stretch）:** camera bound to one boid,
   swimming with it — cheap (a camera attachment), philosophically
   aligned (inhabit an agent driven by simple rules, no scripted camera
@@ -432,11 +452,25 @@ This file is the engineering source of truth; if they conflict, this file wins.
   with tank (2.21→2.94 on widen), 500 fish zero escapes in the
   2.0×1.2×0.8 tank, mobile paths untouched (controls/keys
   desktop-only). Billy's phone: quick regression check when convenient.
-- **Next up:** Billy runs the multi-gyre space experiment in the big
-  tank (orbit around the far side — the whole point). Bottle keepers
-  (`m1-crowded-1000` etc.) → drop maxForce per the tuning-order rule →
-  rebuild weights → bottle post-retune baseline → close M1 (final
-  baseline + `m1-close` safety-net tag; no bundle — preservation is
-  the living pure-flock mode). Mode infrastructure is NOT an M1 close
-  criterion; it's an M2 day-one requirement (rings born with an
-  enable flag). Then M2.
+- **2026-07-17 — FOV + spatial grid + loosened limits
+  (desktop-verified).** Space alone didn't force multi-gyre (Billy:
+  "one broad current with visible internal texture" — top view is the
+  legible instrument). New experiment: `perceptionFOV` (default 360 =
+  off) gates alignment + cohesion per-direction (separation stays
+  omni — lateral line); breaks pair symmetry so direction information
+  must travel. Verified live: polarization shifts at FOV 150, zero
+  escapes, no perf cost. Spatial hash grid built (counting sort, cells
+  ≥ max social radius, 13-cell half neighborhood, auto-fallback to
+  brute when n<200 or grid ≤8 cells — mobile-tank dims fall back by
+  design): 500 fish 1.08→0.70 ms, 2000 fish 8.7 ms (grid) vs ~14
+  (brute est.) — win is ~1.6× at cohesion 0.3 in the desktop tank and
+  GROWS as radii shrink; `flock.lastStepMs` / `lastPairMode` are the
+  instruments. fishCount slider → 3000 (hardMax 10000). Pasted presets
+  now warn when tuned in a different tank (tank key = informational,
+  never applied — a preset describes the school, the tank is the
+  venue). Billy's aside recorded: desktop is becoming the preferred
+  ecosystem — noted, plan unchanged.
+- **Next up:** Billy runs the FOV experiment (the multi-gyre
+  hypothesis test — sweep 360→150→90 and watch from top view). Bottle
+  keepers → maxForce retune → baseline → close M1 (`m1-close` tag).
+  Multi-species awaits ratification; not before M1 close. Then M2.

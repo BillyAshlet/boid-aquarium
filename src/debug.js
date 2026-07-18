@@ -201,10 +201,10 @@ export function createDebug({ world, scene, input, presentation, flock }) {
   const boidsFolder = pane.addFolder({ title: 'boids 鱼群', expanded: false });
   addParam(boidsFolder, BOID_PARAMS, 'fishCount', {
     min: 1,
-    max: 1000, // dense-school exploration headroom (was 200/500)
+    max: 3000, // the phone is the real ceiling — push until fps speaks
     step: 1,
     hardMin: 1,
-    hardMax: 1000,
+    hardMax: 10000,
   }).on('change', (ev) => {
     if (ev.last) flock.setCount(ev.value); // rebuild once, on release
   });
@@ -221,6 +221,9 @@ export function createDebug({ world, scene, input, presentation, flock }) {
   addParam(boidsFolder, BOID_PARAMS, 'alignmentWeight', { min: 0, max: 5, step: 0.05, hardMin: 0 });
   addParam(boidsFolder, BOID_PARAMS, 'cohesionRadius', { min: 0.05, max: 0.8, step: 0.01, hardMin: 0 });
   addParam(boidsFolder, BOID_PARAMS, 'cohesionWeight', { min: 0, max: 5, step: 0.05, hardMin: 0 });
+  // Forward vision cone (degrees). 360 = omnidirectional (off). Gates
+  // alignment + cohesion only — separation is lateral-line, stays omni.
+  addParam(boidsFolder, BOID_PARAMS, 'perceptionFOV', { min: 60, max: 360, step: 5, hardMin: 10, hardMax: 360 });
   // max 2.5 > tank diagonal: deliberately reachable "accidental
   // containment" territory (the old misdiagnosis turned aesthetic)
   addParam(boidsFolder, BOID_PARAMS, 'detectionLength', { min: 0.02, max: 2.5, step: 0.01, hardMin: 0.01, hardMax: 10 });
@@ -253,7 +256,7 @@ export function createDebug({ world, scene, input, presentation, flock }) {
   const presetFolder = pane.addFolder({ title: 'presets 预设', expanded: false });
   presetFolder.addBinding(presetUI, 'name', { label: 'name' });
 
-  function applyParams(params, sourceLabel) {
+  function applyParams(params, sourceLabel, tunedTank) {
     let applied = 0;
     const skipped = [];
     for (const [k, v] of Object.entries(params)) {
@@ -268,9 +271,20 @@ export function createDebug({ world, scene, input, presentation, flock }) {
     // slider's own change handler only fires on user input, not here.
     flock.setCount(BOID_PARAMS.fishCount);
     for (const r of registry) r.ensureVisible();
+    // The tank key is informational, never applied: a preset describes
+    // the school; the tank is the venue. But warn when they differ —
+    // radius params don't transfer verbatim across tank scales.
+    const mismatch =
+      tunedTank &&
+      (tunedTank.width !== TANK.width ||
+        tunedTank.height !== TANK.height ||
+        tunedTank.depth !== TANK.depth)
+        ? ` · tuned in ${tunedTank.width}×${tunedTank.height}×${tunedTank.depth}`
+        : '';
     presetUI.status =
       `${sourceLabel}: ${applied} params` +
-      (skipped.length ? ` · ignored ${skipped.join(', ')}` : '');
+      (skipped.length ? ` · ignored ${skipped.join(', ')}` : '') +
+      mismatch;
   }
 
   let savedList = null;
@@ -359,7 +373,7 @@ export function createDebug({ world, scene, input, presentation, flock }) {
   presetFolder.addButton({ title: 'apply pasted ▶' }).on('click', () => {
     try {
       const obj = JSON.parse(presetUI.paste);
-      applyParams(obj.params ?? obj, obj.name || 'pasted'); // bare param objects OK
+      applyParams(obj.params ?? obj, obj.name || 'pasted', obj.tank); // bare param objects OK
     } catch {
       presetUI.status = 'not valid JSON';
     }
@@ -388,7 +402,7 @@ export function createDebug({ world, scene, input, presentation, flock }) {
 
   // Steering arrows: one LineSegments buffer, two verts per fish.
   const FORCE_SCALE = 0.15;
-  const maxFish = 1000; // must track the fishCount hardMax
+  const maxFish = 10000; // must track the fishCount hardMax
   const linePositions = new Float32Array(maxFish * 6);
   const lineGeo = new THREE.BufferGeometry();
   lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
