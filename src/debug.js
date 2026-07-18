@@ -256,6 +256,10 @@ export function createDebug({ world, scene, input, presentation, flock }) {
   const presetFolder = pane.addFolder({ title: 'presets 预设', expanded: false });
   presetFolder.addBinding(presetUI, 'name', { label: 'name' });
 
+  // Code defaults captured before any preset touches BOID_PARAMS — the
+  // "missing keys → defaults" half of the additive-only schema rule.
+  const PARAM_DEFAULTS = { ...BOID_PARAMS };
+
   function applyParams(params, sourceLabel, tunedTank) {
     let applied = 0;
     const skipped = [];
@@ -266,6 +270,13 @@ export function createDebug({ world, scene, input, presentation, flock }) {
       } else {
         skipped.push(k);
       }
+    }
+    // Keys the preset predates fall back to code defaults — an old
+    // preset must reproduce its bottled aesthetic even after new
+    // params (e.g. perceptionFOV) join the schema. A preset is a full
+    // snapshot, not a partial tweak.
+    for (const k of Object.keys(BOID_PARAMS)) {
+      if (!(k in params)) BOID_PARAMS[k] = PARAM_DEFAULTS[k];
     }
     // setCount both rebuilds the school and normalizes fishCount; the
     // slider's own change handler only fires on user input, not here.
@@ -380,11 +391,17 @@ export function createDebug({ world, scene, input, presentation, flock }) {
   });
   presetFolder.addBinding(presetUI, 'status', { readonly: true, label: '·' });
 
-  const view = { gravityArrow: true, perceptionRadii: false, steeringArrows: false };
+  const view = {
+    gravityArrow: true,
+    perceptionRadii: false,
+    steeringArrows: false,
+    visionCone: false,
+  };
   const viewFolder = pane.addFolder({ title: 'visualizers 可视化' });
   addParam(viewFolder, view, 'gravityArrow', { label: 'gravity arrow' });
   addParam(viewFolder, view, 'perceptionRadii', { label: 'perception radii' });
   addParam(viewFolder, view, 'steeringArrows', { label: 'steering arrows' });
+  addParam(viewFolder, view, 'visionCone', { label: 'vision cone' });
 
   // Perception radii: three wireframe spheres around fish[0]. Numbers
   // are meaningless; wrapped around a swimming fish they're legible.
@@ -414,6 +431,50 @@ export function createDebug({ world, scene, input, presentation, flock }) {
   forceLines.visible = false;
   scene.add(forceLines);
 
+  // Vision cone: a ray-fan on the sample fish marking the FOV boundary.
+  // A fan stays honest at ANY angle (a solid cone lies above 180°): at
+  // 90° it's a tight forward cone; at 270° it folds back around the
+  // blind spot. Scaled to the larger vision radius (ali/coh — the rules
+  // FOV gates). Radii show HOW FAR; the cone shows WHICH DIRECTION.
+  const FOV_RAYS = 24;
+  const fovPositions = new Float32Array(FOV_RAYS * 4 * 3); // rays + ring
+  const fovGeo = new THREE.BufferGeometry();
+  fovGeo.setAttribute('position', new THREE.BufferAttribute(fovPositions, 3));
+  const fovCone = new THREE.LineSegments(
+    fovGeo,
+    new THREE.LineBasicMaterial({ color: '#c9a2ff', transparent: true, opacity: 0.5 })
+  );
+  fovCone.frustumCulled = false;
+  fovCone.visible = false;
+  scene.add(fovCone);
+  let fovBuiltFor = -1;
+  function rebuildFovGeometry(fovDeg) {
+    fovBuiltFor = fovDeg;
+    const theta = THREE.MathUtils.degToRad(fovDeg / 2);
+    const st = Math.sin(theta);
+    const ct = Math.cos(theta);
+    for (let k = 0; k < FOV_RAYS; k++) {
+      const phi = (k / FOV_RAYS) * Math.PI * 2;
+      const x = st * Math.cos(phi);
+      const y = st * Math.sin(phi);
+      const nx = st * Math.cos(((k + 1) / FOV_RAYS) * Math.PI * 2);
+      const ny = st * Math.sin(((k + 1) / FOV_RAYS) * Math.PI * 2);
+      let o = k * 12;
+      // ray: origin → boundary point
+      fovPositions[o] = 0; fovPositions[o + 1] = 0; fovPositions[o + 2] = 0;
+      fovPositions[o + 3] = x; fovPositions[o + 4] = y; fovPositions[o + 5] = ct;
+      // ring segment: boundary point → next boundary point
+      fovPositions[o + 6] = x; fovPositions[o + 7] = y; fovPositions[o + 8] = ct;
+      fovPositions[o + 9] = nx; fovPositions[o + 10] = ny; fovPositions[o + 11] = ct;
+    }
+    fovGeo.attributes.position.needsUpdate = true;
+  }
+  const _fovM = new THREE.Matrix4();
+  const _fovF = new THREE.Vector3();
+  const _fovR = new THREE.Vector3();
+  const _fovU = new THREE.Vector3();
+  const _worldUp = new THREE.Vector3(0, 1, 0);
+
   pane
     .addButton({ title: 'reset all ↺' })
     .on('click', () => resets.forEach((r) => r()));
@@ -435,6 +496,25 @@ export function createDebug({ world, scene, input, presentation, flock }) {
       radiusSpheres[0].scale.setScalar(Math.max(BOID_PARAMS.separationRadius, 1e-4));
       radiusSpheres[1].scale.setScalar(Math.max(BOID_PARAMS.alignmentRadius, 1e-4));
       radiusSpheres[2].scale.setScalar(Math.max(BOID_PARAMS.cohesionRadius, 1e-4));
+    }
+
+    fovCone.visible = view.visionCone && flock.positions.length > 0;
+    if (fovCone.visible) {
+      if (BOID_PARAMS.perceptionFOV !== fovBuiltFor) {
+        rebuildFovGeometry(BOID_PARAMS.perceptionFOV);
+      }
+      fovCone.position.copy(flock.positions[0]);
+      // Same roll-locked basis as the fish mesh: local +Z = heading.
+      _fovF.copy(flock.velocities[0]).normalize();
+      _fovR.crossVectors(_worldUp, _fovF);
+      if (_fovR.lengthSq() < 1e-10) _fovR.set(1, 0, 0);
+      _fovR.normalize();
+      _fovU.crossVectors(_fovF, _fovR).normalize();
+      _fovM.makeBasis(_fovR, _fovU, _fovF);
+      fovCone.quaternion.setFromRotationMatrix(_fovM);
+      fovCone.scale.setScalar(
+        Math.max(BOID_PARAMS.alignmentRadius, BOID_PARAMS.cohesionRadius, 1e-4)
+      );
     }
 
     forceLines.visible = view.steeringArrows;

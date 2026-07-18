@@ -470,7 +470,22 @@ This file is the engineering source of truth; if they conflict, this file wins.
   never applied — a preset describes the school, the tank is the
   venue). Billy's aside recorded: desktop is becoming the preferred
   ecosystem — noted, plan unchanged.
-- **Next up:** Billy runs the FOV experiment (the multi-gyre
-  hypothesis test — sweep 360→150→90 and watch from top view). Bottle
-  keepers → maxForce retune → baseline → close M1 (`m1-close` tag).
-  Multi-species awaits ratification; not before M1 close. Then M2.
+- **2026-07-18 — Vision-cone visualizer + preset defaults-fill fix
+  (desktop-verified).** `vision cone` toggle (visualizers folder): a
+  ray-fan on the sample fish marking the FOV boundary — honest at any
+  angle (solid cones lie above 180°; at 360° the fan degenerates to a
+  single backward ray, correctly). Scaled to max(aliR, cohR), same
+  roll-locked basis as the fish mesh. Fixed a real gap vs the
+  additive-schema rule: applyParams now restores keys MISSING from a
+  preset to code defaults (captured at panel init) — an old preset
+  reproduces its bottled aesthetic even after new params join the
+  schema; a preset is a full snapshot, not a partial tweak.
+  MILESTONES M1 restructure proposed to Billy (not committed —
+  awaiting ratification). Hierarchical/driven-agents architecture
+  discussed: zero-receive species already fit the matrix; externally
+  driven agents = same agent pool, integration delegated to a driver
+  system (v2+ blueprint; v1 needs only per-direction rule application,
+  which FOV already introduced).
+- **Next up:** Billy ratifies the MILESTONES M1 rewrite, then runs the
+  FOV experiment (sweep 360→150→90, top view, cone visualizer on).
+  Bottle keepers → maxForce retune → baseline → `m1-close`. Then M2.
