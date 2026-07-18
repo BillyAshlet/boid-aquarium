@@ -301,10 +301,12 @@ This file is the engineering source of truth; if they conflict, this file wins.
   interaction styles are just matrix entries: independent coexistence
   = identity on ali/coh; treat-as-obstacle = zero ali/coh, full sep;
   weak mixing = fractional off-diagonals; predator/prey = asymmetric
-  entries (v3 — needs a seek rule, defer until wanted). Species
+  entries (P3 — needs a seek rule, defer until wanted). Species
   configs are a **preset axis, not a mode axis** — the 2–3 mode hard
   cap stands; an "ecology mode" is exactly the temptation the cap
-  exists to resist. Start-small v1: 2 species, shared behavior params,
+  exists to resist. **Phase naming: multi-species evolves through
+  P1/P2/P3（阶段）— "P" avoids collision with Billy's Vn/vn/Mn file
+  scheme.** Start-small P1: 2 species, shared behavior params,
   2×2 matrix, per-species color.
 - **Fibonacci-sphere avoidance sampling — evaluated and REJECTED
   (Billy, 2026-07-17). Do not re-litigate.** Uniform 3D direction
@@ -484,7 +486,7 @@ This file is the engineering source of truth; if they conflict, this file wins.
   awaiting ratification). Hierarchical/driven-agents architecture
   discussed: zero-receive species already fit the matrix; externally
   driven agents = same agent pool, integration delegated to a driver
-  system (v2+ blueprint; v1 needs only per-direction rule application,
+  system (P2+ blueprint; P1 needs only per-direction rule application,
   which FOV already introduced).
 - **Next up:** Billy ratifies the MILESTONES M1 rewrite, then runs the
   FOV experiment (sweep 360→150→90, top view, cone visualizer on).

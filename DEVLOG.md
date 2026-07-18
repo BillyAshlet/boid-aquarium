@@ -207,3 +207,24 @@ flocking literature says the interesting regimes live — and the FOV
 cone is the cheapest door into it. Also: performance verdicts have
 expiry dates; the tank change silently reversed the grid decision,
 and only re-asking caught it.
+
+## 2026-07-18 — The cone gets drawn; a routine question catches a real bug
+Vision-cone visualizer built as a ray-fan (solid cones lie above 180°;
+the fan folds honestly around the blind spot, and degenerates to a
+single backward ray at 360°). Billy's routine "confirm addParam
+treatment" question exposed a genuine schema-rule violation: presets
+predating a param left it UNCHANGED instead of restoring the default —
+m1-standing-wave loaded at FOV 90 would not have reproduced its
+bottled aesthetic. Fixed: missing keys → code defaults; a preset is a
+full snapshot. MILESTONES M1 restructure proposed (original scope /
+grown scope / close list). Hierarchical-agents architecture discussed:
+zero-receive species fit the interaction matrix natively; externally
+driven agents = same agent pool, integration delegated to a driver
+system. Multi-species phases renamed v1/v2/v3 → P1/P2/P3 (collision
+with Billy's Vn/vn/Mn file scheme). Billy green-lit convergence-
+noticing as standing practice — three parked ideas (driven agents,
+layered rendering, desktop preference) point at one future object.
+**Learned:** "confirm X works" questions from the person who can't
+read the code are free audits — answer them by checking, never from
+memory. And naming schemes are APIs between collaborators; collisions
+deserve the same respect as code collisions.
