@@ -1,9 +1,12 @@
 # the boid 水族馆 — boid-aquarium
 
-A mobile-first 3D aquarium physics game recreating a childhood water-pressure
-ring-toss toy (水压套圈游戏机). Boid fish school + fluid water + 6DOF rings +
-device-tilt gravity. No score, no timer, no fail state — the game is building
-physical intuition through play. Feel over accuracy, always.
+A living 3D aquarium（活的水族馆）— boid fish school, fluid water,
+emergent structure at the order/chaos edge. Born from a childhood
+water-pressure ring-toss toy (水压套圈游戏机); the ring-toss GAME is
+currently shelved (MILESTONES.md § Game Shelf), while the aquarium —
+the project's literal namesake — is the product. Desktop is the full
+experience; the phone is a tilt-responsive window into the same tank.
+No score, no timer, no fail state. Feel over accuracy, always.
 
 Full design docs live in Notion ("the boid 水族馆") and in
 `career/personal projects/practices/aquarium prompt/VISIOn.md` (iCloud).
@@ -19,17 +22,26 @@ This file is the engineering source of truth; if they conflict, this file wins.
   column, a hexagonal panel arrangement, an exhibition layout. No core
   algorithm may hardcode the current tank box, camera, or art. This is
   the criterion for whether the architecture is doing its job.
-- **Mobile = the game; desktop = the world（手机是游戏，桌面是世界）—
-  revised M1, supersedes "desktop = simplified fallback."** The
-  ring-toss game is fundamentally coupled to tilt gravity — the toy is
-  *about* controlling a shifting horizon with your hands. Ported to
-  constant-gravity desktop it becomes a worse mobile game, not a
-  parallel experience. So desktop gets NO jets, NO rings, NO completion
-  condition, by design: it is an inhabitable aquarium — constant,
-  weighty gravity (a tank sitting on a shelf), fish schooling, cursor
-  as a gentle current (desktop's primary interaction, M3), quiet
-  TDC-magazine-object ambience. Mobile keeps the complete toy,
-  undiluted. Mobile remains the performance budget.
+- **One product: the living aquarium（一个产品：活的水族馆）—
+  Framing B, ratified 2026-07-18. Supersedes "mobile = the game;
+  desktop = the world" (which itself superseded "desktop = simplified
+  fallback").** The product is the desktop living aquarium. The phone
+  is a supported WINDOW into the same aquarium — tilt-responsive,
+  reduced ★ preset; M0's input stack is a finished organ kept alive at
+  five minutes per milestone (see Workflow: phone-window check). The
+  ring-toss game is SHELVED, not deleted: modules intact in
+  MILESTONES § Game Shelf, revisited at the **mobile-derivation
+  checkpoint (F4 close or D3 complete, whichever first)** — build /
+  defer with a new date / retire, decided out loud. Death by decision,
+  never by inertia. Products are modes (per the ratified mode
+  principle): aquarium + pure-flock (M1) + the shelved game = the full
+  2–3 mode budget. **Performance budget: desktop primary; the phone
+  window's ★ preset must stay alive** (supersedes "mobile is the
+  performance budget"). Rationale on record: desktop is the technical
+  superset; Billy's interest decisively there; this is the vision
+  doc's own exit clause ("if it feels like grinding, stop and ask
+  why") exercised deliberately, at a genuine crossroads, not drifted
+  past.
 - **Two posts only.** Challenge comes from physics, not layout.
 - **The order/chaos edge is the aesthetic thesis（秩序与混沌的边界）—
   recorded M1.** The target regime for every dynamic system in this
@@ -112,7 +124,8 @@ This file is the engineering source of truth; if they conflict, this file wins.
 - **Rings: rigid 6DOF bodies + visual-only wobble.** No mass-spring physics.
   Impact drives a damped-oscillator deformation in the shader/mesh only.
 - **Fish: 5DOF** (translation + yaw + pitch). Roll locked — always upright.
-- **Fish orient to gravity, not canonical up (M2).** The 5DOF basis and
+- **Fish orient to gravity, not canonical up (re-slotted to the phone
+  window / F2-era — it's what makes the handheld window slosh).** The 5DOF basis and
   pitch clamp swap hardcoded +Y for smoothed −gravity, so the school
   re-levels its swim plane when the world tilts. Orientation only —
   never a sinking force ("swimmers, not sinkers"). Optional
@@ -125,8 +138,9 @@ This file is the engineering source of truth; if they conflict, this file wins.
 - **Fish-around-geometry, split three ways (M1 design review):**
   point orbit = M5, a plain function of a point, no attractor
   framework; surface affinity = weak attraction toward nearby
-  colliders opposing avoidance → emergent contour-following, prototyped
-  M2 posts-only; field influence = the cursor current above.
+  colliders opposing avoidance → emergent contour-following (shelved
+  with the posts; revisit if D-track grows geometry sooner); field
+  influence = the cursor current above.
 - **Vanilla JS + Three.js. No framework. Vite is a dev server only.**
 - **Canonical landscape frame（canonical 横屏系）.** The game world is
   always landscape and is anchored to the PHYSICAL DEVICE frame, never
@@ -234,6 +248,11 @@ This file is the engineering source of truth; if they conflict, this file wins.
   Renaming a key feels harmless in the moment and breaks every
   archived preset silently — this is the rule a future session
   violates innocently unless it reads this sentence first.
+- **Milestone close = phone-window check（关卡收尾查手机）— Framing B
+  rule.** Five minutes on the real phone: boots, tilts, holds frame
+  rate on the mobile ★ preset. Keeps the mobile door PHYSICALLY open
+  regardless of intentions — the guard against desktop-only habit rot
+  (8 ms steps, hover-only interactions) silently closing it.
 - One system per session. Every session ends with a visible change on screen.
 - Commit every working state. Before risky changes, commit first.
 - Infrastructure code (textbook stuff) can land in big chunks; anything
@@ -488,6 +507,18 @@ This file is the engineering source of truth; if they conflict, this file wins.
   driven agents = same agent pool, integration delegated to a driver
   system (P2+ blueprint; P1 needs only per-direction rule application,
   which FOV already introduced).
-- **Next up:** Billy ratifies the MILESTONES M1 rewrite, then runs the
-  FOV experiment (sweep 360→150→90, top view, cone visualizer on).
-  Bottle keepers → maxForce retune → baseline → `m1-close`. Then M2.
+- **2026-07-18 — FRAMING B RATIFIED ✦ the project's crossroads.**
+  One product: the desktop living aquarium; phone = tilt window;
+  ring-toss game = shelved behind the mobile-derivation checkpoint
+  (F4 close or D3 complete). MILESTONES fully restructured: Legacy M0
+  (mobile input foundation, honestly labeled), F-track (F1 flock →
+  F2 fake water + cursor current → F3 real water → F3.5 look dev →
+  F4 skin), D-track (D1 species / D2 formula drivers / D3 data
+  agents), Game Shelf, standing phone-window check. Locked bullets
+  rewritten: product bullet (Framing B), perf budget (desktop
+  primary), fish-gravity re-slotted to the window, surface affinity
+  shelved with the posts. Decided at a stop, not in drift — the
+  vision doc's exit clause, exercised.
+- **Next up:** website deploy prep (aquarium goes on Billy's personal
+  site), then the F1 close list: FOV experiment → maxForce retune →
+  keepers → baseline → `m1-close` tag + phone-window check. Then F2.

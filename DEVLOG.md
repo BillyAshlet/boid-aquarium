@@ -228,3 +228,26 @@ layered rendering, desktop preference) point at one future object.
 read the code are free audits — answer them by checking, never from
 memory. And naming schemes are APIs between collaborators; collisions
 deserve the same respect as code collisions.
+
+## 2026-07-18 (later) — The crossroads: Framing B
+Billy stopped the project on purpose — "I'd rather stop for it now
+than realize in three sessions that we drifted past it" — and reopened
+the M/D-track framing with three options: original (mobile primary),
+A (foundation + two co-equal products), B (desktop-first, mobile
+optional). The recommendation was B *amended*: "mobile" is two things —
+the phone (a finished, cheap, soul-bearing WINDOW: M0's input stack
+already runs the aquarium with real tilt) and the ring-toss game (the
+expensive unbuilt product the commitment was actually about). So: one
+product — the living aquarium, the project's literal namesake — with
+two windows, and the game shelved behind a dated checkpoint (F4 close
+or D3 complete: build / defer / retire, out loud). Two guards against
+the named hazards: the milestone-close phone-window check (against
+desktop habit rot silently closing the door) and the checkpoint itself
+(against death by inertia). Billy ratified with all costs accepted.
+MILESTONES restructured: Legacy M0 / F-track / D-track / Game Shelf.
+**Learned:** the vision doc's boundaries section was the project's
+constitution all along — "if it feels like grinding, stop and ask
+why" is an exit clause, and exercising it deliberately at a stop is
+the opposite of drifting. Also: when someone disavows their origin
+story mid-pivot, don't argue — build the checkpoint that will test
+the claim later.
